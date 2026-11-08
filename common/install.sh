@@ -958,7 +958,6 @@ EOF
             -e '/<effect name="preset_reverb"/d' \
             -e '/<effect name="environmental_reverb"/d' \
             -e '/<effect name="loudness_enhancer"/d' \
-            -e '/<effect name="dynamics_processing"/d' \
             -e '/<effect name="dirac"/d' \
             -e '/<effect name="misound"/d' \
             -e '/<effect name="sa3d"/d' \
@@ -1016,7 +1015,7 @@ EOF
             }
 
             if (skip == 0) {
-              if (line ~ /^[[:space:]]*[-a-zA-Z0-9_]*(reverb|dirac|misound|dts|waves|sa3d|downmix|loudness_enhancer|dynamics_processing)[-a-zA-Z0-9_]*[[:space:]]*\{/) {
+              if (line ~ /^[[:space:]]*[-a-zA-Z0-9_]*(reverb|dirac|misound|dts|waves|sa3d|downmix|loudness_enhancer)[-a-zA-Z0-9_]*[[:space:]]*\{/) {
                 skip = 1
                 skip_depth = depth
               }
