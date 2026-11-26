@@ -49,25 +49,40 @@ viewbox(
     "@welcome"
 );
 
-#-- Step 2: Setup Mode Hub (with jump-back support for Filemanager & Restore guard)
+#-- Step 2: Setup Mode Hub (mode-aware: hides Recovery-only Filemanager in Android BOOTMODE=1)
 gotolabel("setup_menu");
 
-menubox(
-    "Setup Mode",
-    "Choose how you want to configure NLSound v4.5:",
-    "@customize",
-    "setup_mode.prop",
-    "Custom Configuration (Touch Wizard)",
-        "Configure all 15 audio options visually across 4 clean screens", "@personalize",
-    "Audiophile Recommended (1-Tap)",
-        "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
-    "Restore Previous Profile",
-        "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update",
-    "AROMA-Next Filemanager & Modules",
-        "Inspect /data/adb/modules, storage & partitions right from Recovery", "@apps"
-);
+if prop("nls_env.prop", "is_volkey") == "1" then
+    menubox(
+        "Setup Mode",
+        "Choose how you want to configure NLSound v4.5:",
+        "@customize",
+        "setup_mode.prop",
+        "Custom Configuration (Step-by-Step)",
+            "Configure all 15 audio options across 4 grouped sections", "@personalize",
+        "Audiophile Recommended (1-Tap)",
+            "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
+        "Restore Previous Profile",
+            "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update"
+    );
+else
+    menubox(
+        "Setup Mode",
+        "Choose how you want to configure NLSound v4.5:",
+        "@customize",
+        "setup_mode.prop",
+        "Custom Configuration (Touch Wizard)",
+            "Configure all 15 audio options visually across 4 clean screens", "@personalize",
+        "Audiophile Recommended (1-Tap)",
+            "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
+        "Restore Previous Profile",
+            "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update",
+        "AROMA-Next Filemanager & Modules",
+            "Inspect /data/adb/modules, storage & partitions right from Recovery", "@apps"
+    );
+endif;
 
-#-- Handle Filemanager launch and return cleanly to Setup Mode Hub
+#-- Handle Filemanager launch and return cleanly to Setup Mode Hub (Recovery Touch GUI)
 if prop("setup_mode.prop", "selected") == "4" then
     filemanager("/data/adb/modules");
     goto("setup_menu");

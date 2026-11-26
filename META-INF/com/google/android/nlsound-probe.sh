@@ -165,9 +165,22 @@ if [ -f "$SAVED_SRC" ]; then
   saved_info="Found (Steps: ${s_vol:-skip}, ${s_bit:-stock}-bit, ${s_sr:-stock} Hz)"
 fi
 
-# 6. Write probe outputs
+# 6. Write probe outputs (mode-aware copy for Recovery Touch GUI vs Android BOOTMODE=1 VolKey)
+is_volkey=0
+if [ "$AROMA_VOLKEY" = "1" ] || [ "$BOOTMODE" = "true" ] || [ "$BOOTMODE" = "1" ]; then
+  is_volkey=1
+fi
+
+if [ "$is_volkey" = "1" ]; then
+  WELCOME_HINT="Running in Android App Mode (Volume Key Selector).
+Tip: Flash in Custom Recovery (TWRP / OrangeFox / AERA) to unlock the full 60-120Hz AROMA-Next Touch GUI & Filemanager!"
+else
+  WELCOME_HINT="<i>No more tapping Volume buttons 20 times! Configure all 15 NLSound tweaks visually with touch, live themes, fonts & built-in Filemanager (3-dot menu).</i>"
+fi
+
 cat > "$AROMA_DIR/nls_env.prop" <<EOF
 can_install=$can_install
+is_volkey=$is_volkey
 root_summary=$root_summary
 device=$DEVICE
 model=$MODEL
@@ -192,7 +205,7 @@ Powered by <#selectbg_g><b>AROMA-Next-Installer V26.11</b></#>
 • <b>Root Target:</b> <#selectbg_g>$root_summary</#>
 • <b>Saved Profile:</b> $saved_info
 
-<i>No more tapping Volume buttons 20 times! Configure all 15 NLSound tweaks visually with touch, live themes, fonts & built-in Filemanager (3-dot menu).</i>
+$WELCOME_HINT
 EOF
 
 exit 0

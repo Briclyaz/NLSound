@@ -44,7 +44,7 @@ STEP13="false"
 STEP14="false"
 PATCHACDB="false"
 DELETEACDB="false"
-PROFILE_LABEL="Custom Touch Configuration"
+PROFILE_LABEL="Custom Configuration"
 EXTRA_NOTE=""
 
 if [ "$MODE_SEL" = "2" ]; then
@@ -71,8 +71,8 @@ elif [ "$MODE_SEL" = "3" ] && [ -f "$AROMA_DIR/saved_settings.nls" ]; then
   PROFILE_LABEL="Restored Previous Profile (settings.nls)"
   . "$AROMA_DIR/saved_settings.nls"
 else
-  # Custom Configuration from AROMA Touch Wizard
-  PROFILE_LABEL="Custom Touch Configuration"
+  # Custom Configuration from AROMA Wizard
+  PROFILE_LABEL="Custom Configuration"
 
   # Page 1: Volume & Gain (vol_gain.prop)
   v_steps="$(read_prop "vol_gain.prop" "volsteps" "30")"

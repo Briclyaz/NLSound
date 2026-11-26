@@ -28,6 +28,9 @@ All notable changes in this **AROMA-Next Edition** fork of [Briclyaz/NLSound](ht
   - Added read-only partition mirror mounting (`$ORIGDIR`) and `build.prop` fallback detection for full Recovery installation support.
 
 ### Fixed
+- **Polished `BOOTMODE=1` Volume Key Console UX:**
+  - Added automatic 48-column word-wrapping and multi-line item descriptions in AROMA-Next's native Volume Key engine so Magisk / KernelSU / APatch consoles never truncate text horizontally.
+  - Made the Welcome screen and Setup Mode menu mode-aware via `AROMA_VOLKEY=1`: hides the Recovery-only Filemanager menu item and updates wording cleanly when flashed inside Android root manager apps.
 - Preserved `/data/adb/modules/NLSound/settings.nls` across recovery upgrades before module directory reset.
 - Prevented ACDB download step from overwriting the global `$ZIPFILE` variable.
 - Ensured `mixer_paths*.xml` is always copied into `$MODPATH` before injecting tinymix XML parameters.
