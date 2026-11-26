@@ -2,24 +2,42 @@
 
 [ **English** ] • [ [Русский](README_RU.md) ] • [ [繁體中文](README_ZH.md) ]
 
-# 🎵 NLSound
+# 🎵 NLSound — AROMA-Next Edition
 
-### An open-source, system-level audio enhancement module for Android.
+### System-level Android Hi-Fi Audio Enhancement Module with Full Touch GUI in Recovery (Powered by [AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer))
 
-[![GitHub Release](https://img.shields.io/github/v/release/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=blue&logo=github)](https://github.com/Briclyaz/NLSound_module_QCom/releases)
-[![Downloads](https://img.shields.io/github/downloads/Briclyaz/NLSound_module_QCom/total?style=for-the-badge&logo=github&color=34D399)](https://github.com/Briclyaz/NLSound_module_QCom/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=gold&logo=github)](https://github.com/Briclyaz/NLSound_module_QCom/stargazers)
-[![Root](https://img.shields.io/badge/Root-Magisk%20%7C%20KernelSU%20%7C%20APatch-orange?style=for-the-badge&logo=android)](https://github.com/Briclyaz/NLSound_module_QCom)
-[![Platform](https://img.shields.io/badge/Platform-Qualcomm%20%7C%20MediaTek-blue?style=for-the-badge)](https://github.com/Briclyaz/NLSound_module_QCom)
-[![License](https://img.shields.io/github/license/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=gray)](LICENSE)
-[![Telegram Updates](https://img.shields.io/badge/Channel-@nlsound__updates-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/nlsound_updates)
-[![Telegram Support](https://img.shields.io/badge/Support-@nlsound__support-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/nlsound_support)
-
-<a href="https://github.com/Briclyaz/NLSound_module_QCom/releases/latest">
-  <img src="https://img.shields.io/badge/⚡_DOWNLOAD_LATEST_RELEASE-0969DA?style=for-the-badge&logo=github&logoColor=white" height="42" alt="Download Latest Release"/>
-</a>
+[![AROMA-Next](https://img.shields.io/badge/AROMA--Next-V26.11%20Touch%20GUI-111111?style=for-the-badge&logo=android)](https://github.com/Miustone/AROMA-Next-Installer)
+[![Upstream](https://img.shields.io/badge/Upstream-Briclyaz%2FNLSound%20v4.5-0969DA?style=for-the-badge&logo=github)](https://github.com/Briclyaz/NLSound)
+[![Root](https://img.shields.io/badge/Root-Magisk%20%7C%20KernelSU%20%7C%20APatch-orange?style=for-the-badge&logo=android)](https://github.com/Briclyaz/NLSound)
+[![Recovery](https://img.shields.io/badge/Recovery-TWRP%20%7C%20OrangeFox%20%7C%20AERA-2EA043?style=for-the-badge)](https://github.com/Miustone/AROMA-Next-Installer)
+[![Platform](https://img.shields.io/badge/Platform-Qualcomm%20%7C%20MediaTek-blue?style=for-the-badge)](https://github.com/Briclyaz/NLSound)
 
 </div>
+
+---
+
+## ✨ Why This Fork? — Touch GUI vs. Volume Key Selector
+
+Upstream **NLSound** is an amazing audiophile module with **15 configuration steps** — but tapping `Vol+` / `Vol-` 25+ times in a terminal prompt (with no Back button!) gets tiring fast.
+
+This fork integrates **[AROMA-Next-Installer V26.11](https://github.com/Miustone/AROMA-Next-Installer)** (`arm64-v8a` + `armeabi-v7a` DRM/KMS & fbdev engine) directly into NLSound v4.5:
+
+| Environment | Installer Experience | Highlights |
+| :--- | :--- | :--- |
+| **Custom Recovery** (`TWRP`, `OrangeFox`, `AERA`, `PitchBlack` — `BOOTMODE=0`) | **🎨 AROMA-Next Touch GUI** | Live hardware & SmartPA/DAC dashboard, **1-Tap Audiophile Preset**, **1-Tap Profile Restore**, all 15 options grouped into **4 clean touch screens** with Back support, live summary preview, animated 60–120Hz progress bar, **7 Google Sans/OFL fonts**, **6 live themes**, and built-in **AROMA-Next Filemanager & Root Module Manager**! |
+| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Native Volume Key Selector** | Automatically detects `BOOTMODE=1` (where Android SurfaceFlinger owns the display) and seamlessly runs NLSound's original Volume Key Selector. |
+| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Zero-Freeze Headless Fallback** | Never hangs recovery — restores saved `settings.nls` or applies safe Audiophile Recommended defaults automatically. |
+
+> [!TIP]
+> **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.
+
+### 📦 Building the Flashable ZIP
+```sh
+python build.py
+```
+Outputs `dist/NLSound-v4.5-AROMA-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
+
+---
 
 ---
 
