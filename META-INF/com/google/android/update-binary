@@ -1,10 +1,10 @@
 #!/sbin/sh
-# NLSound — AROMA-Next-Installer Dual-Mode Dispatcher
-# - Custom Recovery (BOOTMODE=false / 0): Launches AROMA-Next Touch GUI (arm64 / arm32)
-# - Android System  (BOOTMODE=true  / 1): Hands off to NLSound Volume Key Selector
-# - Recovery Display Lock (EXIT 77):      Falls back cleanly to non-GUI defaults
+# AROMA-Next Installer - Universal Multi-Arch Recovery & Root-App Dispatcher
+# - Custom Recovery (BOOTMODE=0): Full 60-120Hz Touch GUI (arm64 / arm32)
+# - Booted Android  (BOOTMODE=1): Automatic native Volume Key Selector from the same aroma-config
+# - Recovery Display Lock (EXIT 77): Automatic fallback to native Volume Key Selector
 #
-# Powered by AROMA-Next-Installer (https://github.com/Miustone/AROMA-Next-Installer)
+# Arguments: $1 = API version, $2 = OUTFD pipe fd, $3 = ZIP path
 
 OUTFD="$2"
 ZIPFILE="$3"
@@ -16,14 +16,10 @@ ui_print() {
   echo "$1"
 }
 
-# Normalize / detect BOOTMODE (Android system vs Custom Recovery)
+# Detect booted Android (Magisk / KernelSU / APatch app) vs Custom Recovery
 case "$BOOTMODE" in
-  true|1)
-    BOOTMODE=true
-    ;;
-  false|0)
-    BOOTMODE=false
-    ;;
+  true|1)  BOOTMODE=true ;;
+  false|0) BOOTMODE=false ;;
   *)
     if (ps -A 2>/dev/null || ps 2>/dev/null) | grep -qE "zygote|surfaceflinger" \
        || [ -n "$(pidof zygote zygote64 surfaceflinger 2>/dev/null)" ]; then
@@ -41,11 +37,48 @@ TMPDIR="/tmp/aroma-next"
 rm -rf "$TMPDIR"
 mkdir -p "$TMPDIR"
 
-run_module_installer() {
+extract_aroma_bin() {
+  local candidates c
+  case "$ARCH" in
+    aarch64|arm64*)
+      candidates="META-INF/com/google/android/bin/aroma_installer-arm64 META-INF/com/google/android/bin/aroma_installer-arm32 META-INF/com/google/android/aroma_installer"
+      ;;
+    armv7*|armv8*|arm*)
+      candidates="META-INF/com/google/android/bin/aroma_installer-arm32 META-INF/com/google/android/aroma_installer"
+      ;;
+    x86_64|amd64)
+      candidates="META-INF/com/google/android/bin/aroma_installer-x86_64 META-INF/com/google/android/aroma_installer"
+      ;;
+    *)
+      candidates="META-INF/com/google/android/aroma_installer"
+      ;;
+  esac
+  BIN_PATH=""
+  for c in $candidates; do
+    unzip -o "$ZIPFILE" "$c" -d "$TMPDIR" >/dev/null 2>&1
+    if [ -f "$TMPDIR/$c" ]; then
+      BIN_PATH="$TMPDIR/$c"
+      chmod 755 "$BIN_PATH"
+      break
+    fi
+  done
+}
+
+run_fallback_installer() {
   unzip -o "$ZIPFILE" "META-INF/com/google/android/magisk-installer" -d "$TMPDIR" >/dev/null 2>&1
   if [ -f "$TMPDIR/META-INF/com/google/android/magisk-installer" ]; then
     chmod 755 "$TMPDIR/META-INF/com/google/android/magisk-installer"
     exec sh "$TMPDIR/META-INF/com/google/android/magisk-installer" "$1" "$2" "$3"
+  fi
+  unzip -o "$ZIPFILE" "META-INF/com/google/android/update-binary-installer" -d "$TMPDIR" >/dev/null 2>&1
+  if [ -f "$TMPDIR/META-INF/com/google/android/update-binary-installer" ]; then
+    chmod 755 "$TMPDIR/META-INF/com/google/android/update-binary-installer"
+    "$TMPDIR/META-INF/com/google/android/update-binary-installer" "$1" "$2" "$3"
+    FB_RC=$?
+    if [ "$FB_RC" -ne 0 ]; then
+      ui_print "! Legacy update-binary-installer exited with status $FB_RC."
+    fi
+    exit "$FB_RC"
   fi
   if [ -f /data/adb/magisk/util_functions.sh ]; then
     export OUTFD ZIPFILE BOOTMODE
@@ -53,49 +86,24 @@ run_module_installer() {
     install_module
     exit $?
   fi
-  ui_print "! No module installer bridge found in archive."
+  ui_print "! No fallback installer found in archive."
   exit 1
 }
 
-# Booted Android (Magisk / KernelSU / APatch Manager -> BOOTMODE=true/1)
+# Booted Android (BOOTMODE=1): Hand off to magisk-installer -> customize.sh
+# (customize.sh invokes aroma_run_config_if_needed -> native AROMA Volume Key Selector!)
 if [ "$BOOTMODE" = "true" ]; then
-  ui_print "- Booted Android detected (BOOTMODE=1)"
-  ui_print "- Launching NLSound Volume Key Selector..."
-  ui_print "  (Tip: Flash in Recovery for the full AROMA-Next Touch GUI!)"
-  run_module_installer "$1" "$2" "$3"
+  ui_print "- AROMA-Next: Booted Android detected (BOOTMODE=1)"
+  ui_print "- Switching aroma-config to native Volume Key Selector mode..."
+  run_fallback_installer "$1" "$2" "$3"
 fi
 
-# Custom Recovery (TWRP / OrangeFox / AERA / PitchBlack -> BOOTMODE=false/0)
-# Clear any stale AROMA state from a previous flash in this recovery session
-rm -rf /tmp/aroma
-
-CANDIDATES=""
-case "$ARCH" in
-  aarch64|arm64*)
-    CANDIDATES="META-INF/com/google/android/bin/aroma_installer-arm64 META-INF/com/google/android/bin/aroma_installer-arm32"
-    ;;
-  armv7*|armv8*|arm*)
-    CANDIDATES="META-INF/com/google/android/bin/aroma_installer-arm32"
-    ;;
-  *)
-    CANDIDATES="META-INF/com/google/android/bin/aroma_installer-arm64 META-INF/com/google/android/bin/aroma_installer-arm32"
-    ;;
-esac
-
-BIN_PATH=""
-for c in $CANDIDATES; do
-  unzip -o "$ZIPFILE" "$c" -d "$TMPDIR" >/dev/null 2>&1
-  if [ -f "$TMPDIR/$c" ]; then
-    BIN_PATH="$TMPDIR/$c"
-    chmod 755 "$BIN_PATH"
-    break
-  fi
-done
+# Custom Recovery (BOOTMODE=0): Launch full Touch GUI
+extract_aroma_bin
 
 if [ -z "$BIN_PATH" ] || [ ! -x "$BIN_PATH" ]; then
   ui_print "! No compatible AROMA-Next binary for arch: $ARCH"
-  export AROMA_FALLBACK=1
-  run_module_installer "$1" "$2" "$3"
+  run_fallback_installer "$1" "$2" "$3"
 fi
 
 "$BIN_PATH" "$1" "$2" "$3"
@@ -103,9 +111,9 @@ RC=$?
 
 if [ "$RC" -eq 77 ]; then
   ui_print "! AROMA-Next: Display locked by recovery (DRM master / no fbdev)."
-  ui_print "- Falling back to headless NLSound installation (no Volume Key prompt)..."
-  export AROMA_FALLBACK=1
-  run_module_installer "$1" "$2" "$3"
+  ui_print "- Switching to native AROMA-Next Volume Key Selector..."
+  "$BIN_PATH" --volkey "$1" "$2" "$3"
+  exit $?
 fi
 
 exit "$RC"

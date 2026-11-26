@@ -12,21 +12,62 @@
 [![Recovery](https://img.shields.io/badge/Recovery-TWRP%20%7C%20OrangeFox%20%7C%20AERA-2EA043?style=for-the-badge)](https://github.com/Miustone/AROMA-Next-Installer)
 [![Platform](https://img.shields.io/badge/Platform-Qualcomm%20%7C%20MediaTek-blue?style=for-the-badge)](https://github.com/Briclyaz/NLSound)
 
+[Screenshots](#-screenshots-recovery-touch-gui) • [Why AROMA-Next](#-why-this-fork--one-aroma-config-zero-mmt-extended) • [Features](#-key-features-at-a-glance) • [Changelog](CHANGELOG.md) • [AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)
+
 </div>
 
 ---
 
-## ✨ Why This Fork? — Touch GUI vs. Volume Key Selector
+## 📸 Screenshots (Recovery Touch GUI)
 
-Upstream **NLSound** is an amazing audiophile module with **15 configuration steps** — but tapping `Vol+` / `Vol-` 25+ times in a terminal prompt (with no Back button!) gets tiring fast.
+<p align="center">
+  <em>Captured live on Google Pixel 7 Pro (<code>cheetah</code>) • OrangeFox R12.0 • Black &amp; White Theme + Google Sans — Click any screenshot for full QHD+ resolution</em>
+</p>
 
-This fork integrates **[AROMA-Next-Installer V26.11](https://github.com/Miustone/AROMA-Next-Installer)** (`arm64-v8a` + `armeabi-v7a` DRM/KMS & fbdev engine) directly into NLSound v4.5:
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <a href="screenshots/01-welcome-dashboard.png">
+          <img src="screenshots/thumbs/01-welcome-dashboard.png" width="190" alt="Welcome &amp; Live Hardware Dashboard">
+        </a><br>
+        <sub><b>1. Welcome &amp; Hardware Dashboard</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/02-setup-mode.png">
+          <img src="screenshots/thumbs/02-setup-mode.png" width="190" alt="Setup Mode Hub">
+        </a><br>
+        <sub><b>2. Setup Mode Hub</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/03-live-install-log.png">
+          <img src="screenshots/thumbs/03-live-install-log.png" width="190" alt="Live Install Progress &amp; Log">
+        </a><br>
+        <sub><b>3. Live Install &amp; Summary Log</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/04-install-complete.png">
+          <img src="screenshots/thumbs/04-install-complete.png" width="190" alt="Installation Complete">
+        </a><br>
+        <sub><b>4. Complete &amp; 1-Tap Reboot</b></sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## ✨ Why This Fork? — ONE `aroma-config`, ZERO MMT-Extended!
+
+Upstream **NLSound** relies on MMT-Extended + a 200-line bash Volume Key Selector with **15 sequential prompts**.
+
+With **[AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)**'s built-in **Dual-Mode Engine**, module developers author **only ONE `aroma-config`** (zero MMT-Extended, zero duplicate Volume Key code!) and automatically get both worlds:
 
 | Environment | Installer Experience | Highlights |
 | :--- | :--- | :--- |
 | **Custom Recovery** (`TWRP`, `OrangeFox`, `AERA`, `PitchBlack` — `BOOTMODE=0`) | **🎨 AROMA-Next Touch GUI** | Live hardware & SmartPA/DAC dashboard, **1-Tap Audiophile Preset**, **1-Tap Profile Restore**, all 15 options grouped into **4 clean touch screens** with Back support, live summary preview, animated 60–120Hz progress bar, **7 Google Sans/OFL fonts**, **6 live themes**, and built-in **AROMA-Next Filemanager & Root Module Manager**! |
-| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Native Volume Key Selector** | Automatically detects `BOOTMODE=1` (where Android SurfaceFlinger owns the display) and seamlessly runs NLSound's original Volume Key Selector. |
-| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Zero-Freeze Headless Fallback** | Never hangs recovery — restores saved `settings.nls` or applies safe Audiophile Recommended defaults automatically. |
+| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Built-In AROMA-Next Volume Key Selector** | Automatically renders the **exact same `aroma-config`** (`menubox`, `form`, `checkbox`, `selectbox`, `viewbox`) via native C `/dev/input` Volume Keys inside Magisk, KernelSU, or APatch — zero duplicate code! |
+| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Automatic Volume Key Fallback** | Never freezes recovery — switches automatically to AROMA-Next's native Volume Key Selector from the same `aroma-config`. |
 
 > [!TIP]
 > **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.

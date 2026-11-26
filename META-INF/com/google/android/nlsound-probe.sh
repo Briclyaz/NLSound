@@ -9,16 +9,18 @@
 AROMA_DIR="${AROMA_TMP:-/tmp/aroma}"
 mkdir -p "$AROMA_DIR"
 
-# 1. Mount /data and read-only partitions safely if not yet mounted
-if ! grep -q " /data " /proc/mounts 2>/dev/null; then
-  mount /data >/dev/null 2>&1 || true
-fi
-
-for part in /system_root /system /vendor /product /system_ext /odm /mi_ext /my_product; do
-  if [ -d "$part" ] && ! grep -q " $part " /proc/mounts 2>/dev/null; then
-    mount -o ro "$part" >/dev/null 2>&1 || mount "$part" >/dev/null 2>&1 || true
+# 1. In Recovery (BOOTMODE != true), mount /data and read-only partitions safely if not yet mounted
+if [ "$BOOTMODE" != "true" ] && [ "$BOOTMODE" != "1" ]; then
+  if ! grep -q " /data " /proc/mounts 2>/dev/null; then
+    mount /data >/dev/null 2>&1 || true
   fi
-done
+
+  for part in /system_root /system /vendor /product /system_ext /odm /mi_ext /my_product; do
+    if [ -d "$part" ] && ! grep -q " $part " /proc/mounts 2>/dev/null; then
+      mount -o ro "$part" >/dev/null 2>&1 || mount "$part" >/dev/null 2>&1 || true
+    fi
+  done
+fi
 
 # Helper to find a real build.prop key from mounted partitions if getprop is empty
 read_prop_file() {
@@ -83,10 +85,14 @@ PROCESSOR="$(getprop ro.board.platform 2>/dev/null)"
 
 HW="$(getprop ro.hardware 2>/dev/null)"
 [ -z "$HW" ] && HW="$(read_prop_file ro.hardware)"
-SOC_TYPE="Qualcomm / Universal"
-case "$HW" in
-  mt*) SOC_TYPE="MediaTek ($PROCESSOR)" ;;
-  *)   [ "$PROCESSOR" != "unknown" ] && SOC_TYPE="Qualcomm / $PROCESSOR" ;;
+SOC_TYPE="$PROCESSOR"
+case "$HW:$PROCESSOR" in
+  mt*:*)                       SOC_TYPE="MediaTek ($PROCESSOR)" ;;
+  *:gs*|*tensor*:*)            SOC_TYPE="Google Tensor ($PROCESSOR)" ;;
+  *:exynos*|*:s5e*)            SOC_TYPE="Samsung Exynos ($PROCESSOR)" ;;
+  *:msm*|*:sdm*|*:sm*|*:kona*|*:lahaina*|*:taro*|*:kalama*|*:pineapple*|*:sun*|*:bengal*|*:lito*)
+                               SOC_TYPE="Qualcomm Snapdragon ($PROCESSOR)" ;;
+  *:unknown)                   SOC_TYPE="Universal Android SoC" ;;
 esac
 
 # 4. Detect Audio Hardware (Amplifiers & DAC / Codec)

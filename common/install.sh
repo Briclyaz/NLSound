@@ -76,12 +76,44 @@ ACDB="https://github.com/Briclyaz/NLSound_module_acdb_addon/raw/refs/heads/main/
 ACDBDIR="$MODPATH$(normalize_path "/vendor/etc/acdbdata")"
 SEPARATOR="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# import language strings (POSIX case for Recovery BusyBox ash & Android mksh compatibility)
-case "$LANG" in
-  *en-RU*|*ru-*) . "$MODPATH/common/russiantext.sh" ;;
-  *zh-*)         . "$MODPATH/common/chinesetext.sh" ;;
-  *)             . "$MODPATH/common/englishtext.sh" ;;
-esac
+# Hardware display strings (UI & selection handled natively by AROMA-Next Touch / VolKey engine)
+HW_HEADER="          [ AUDIO HARDWARE DETECTED ]"
+HW_CIRRUS="Speaker Amplifier    : Cirrus Logic (CS35L41)"
+HW_TFA="Speaker Amplifier    : NXP / Goodix TFA"
+HW_TAS="Speaker Amplifier    : Texas Instruments (TAS)"
+HW_AWINIC="Speaker Amplifier    : Awinic (AW88xx)"
+HW_MAXIM="Speaker Amplifier    : Maxim Integrated"
+HW_WSA="Speaker Amplifier    : Qualcomm WSA"
+HW_WCD="Primary Audio Codec  : Qualcomm WCD (Aqstic Hi-Fi)"
+HW_ESS="Dedicated Hi-Fi DAC  : ESS Sabre"
+HW_AKM="Dedicated Hi-Fi DAC  : Asahi Kasei (AKM)"
+HW_SOC="Primary Audio Codec  : Integrated Processor Codec (SoC)"
+
+final_print_text() {
+  ui_print "$SEPARATOR"
+  ui_print "          CONFIGURATION SUMMARY"
+  ui_print "$SEPARATOR"
+  ui_print "  01 Volume steps count        : $VOLSTEPS"
+  ui_print "  02 Max volume level          : $VOLMEDIA"
+  ui_print "  03 Mic sensitivity           : $VOLMIC"
+  ui_print "  04 Audio bit depth           : $BITNES"
+  ui_print "  05 Audio sample rate         : $SAMPLERATE"
+  ui_print "  06 Limiters & DRC disabled   : $STEP6"
+  ui_print "  07 Vendor Hi-Fi features     : $STEP7"
+  ui_print "  08 Sub-bass & mixer patches  : $STEP8"
+  ui_print "  09 build.prop optimizations  : $STEP9"
+  ui_print "  10 Bluetooth enhancements    : $STEP10"
+  ui_print "  11 Direct PCM routing        : $STEP11"
+  ui_print "  12 Audio effects policy      : $STEP12"
+  ui_print "  13 Device hardware tweaks    : $STEP13"
+  ui_print "  14 Dolby Atmos Hi-Fi profile : $STEP14"
+  ui_print "  15 ACDB modifications        : $([ "$PATCHACDB" != "false" ] && echo "$PATCHACDB" || echo "$DELETEACDB")"
+  ui_print "$SEPARATOR"
+  ui_print "  Device model   : $DEVICE"
+  ui_print "  Module version : $VERSION"
+  ui_print "$SEPARATOR"
+  ui_print "  Patching audio files, please wait..."
+}
 
 # Добавляем пути рут-менеджеров в PATH (Magisk, KernelSU, APatch)
 export PATH="/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH"
@@ -241,41 +273,6 @@ detect_codec HAS_WCD "wcd|bolero|rx_macro|tx_macro|lpass.*macro|dec0 mode|rx int
 ui_print "$SEPARATOR"
 ui_print " "
 
-handle_input() {
-  while true; do
-    case $(getevent -lq 2>/dev/null | grep -m 1 -E 'KEY_VOLUME(UP|DOWN).*DOWN') in
-      *KEY_VOLUMEUP*)   echo "up"; return ;;
-      *KEY_VOLUMEDOWN*) echo "down"; return ;;
-    esac
-  done
-}
-
-show_menu() {
-  local selected=1
-  local total=$#
-  if [ $total -eq 2 ]; then
-    while true; do
-      case $(handle_input) in
-      "up") return 1 ;;
-      "down") return 2 ;;
-      esac
-    done
-  else
-    while true; do
-      eval "local current=\"\$$selected\""
-      ui_print "➔ $current"
-      ui_print " "
-      case $(handle_input) in
-      "up") selected=$((selected % total + 1)) ;;
-      "down")
-        ui_print "$SELECTE $current"
-        return $selected
-        ;;
-      esac
-    done
-  fi
-}
-
 VOLSTEPS=false
 VOLMEDIA=false
 VOLMIC=false
@@ -293,221 +290,46 @@ STEP14=false
 PATCHACDB=false
 DELETEACDB=false
 
+# Load configuration produced by AROMA-Next (Touch GUI in Recovery OR native VolKey Selector in BOOTMODE=1)
 AROMA_CFG="${AROMA_TMP:-/tmp/aroma}/nlsound.cfg"
-
-# Dual-Mode Selector:
-#   - Recovery (BOOTMODE=false/0): Uses AROMA-Next Touch GUI config (never Volume Key Selector)
-#   - Android System (BOOTMODE=true/1): Uses interactive Volume Key Selector
-if [ "$BOOTMODE" != "true" ] && [ "$BOOTMODE" != "1" ]; then
-  if [ -f "$AROMA_CFG" ]; then
-    ui_print "- Loading configuration from AROMA-Next Touch GUI..."
-    . "$AROMA_CFG"
-  elif [ -f "$RESTORE_SETTINGS" ]; then
-    ui_print "- AROMA-Next headless fallback: Restoring saved settings.nls..."
-    . "$RESTORE_SETTINGS"
-  else
-    ui_print "- AROMA-Next headless fallback: Applying Audiophile Recommended defaults..."
-    VOLSTEPS="30"
-    VOLMEDIA="false"
-    VOLMIC="false"
-    BITNES="24"
-    SAMPLERATE="96000"
-    STEP6="true"
-    STEP7="true"
-    STEP8="true"
-    STEP9="true"
-    STEP10="true"
-    STEP11="true"
-    STEP12="part"
-    STEP13="true"
-    STEP14="true"
-    PATCHACDB="false"
-    DELETEACDB="false"
-  fi
-
-  # Apply device-capability guards identically to interactive mode
-  if [ "$STEP7" = "true" ] && [ -z "$DEVFEASNEW" ] && [ -z "$DEVFEAS" ]; then
-    STEP7="false"
-  fi
-  if [ "$STEP11" = "true" ] && [ -z "$IOPOLICYS" ] && [ -z "$OUTPUTPOLICYS" ]; then
-    STEP11="false"
-  fi
-  if [ "$STEP14" = "true" ]; then
-    if [ "$STEP12" = "full" ] || { [ -z "$DAXES" ] && [ -z "$DCODECS" ]; }; then
-      STEP14="false"
-    fi
-  fi
-  if [ "$DELETEACDB" != "false" ] && [ -z "$OLDACDBS" ]; then
-    DELETEACDB="false"
-  fi
-  export SAMPLERATE BITNES VOLMIC VOLMEDIA VOLSTEPS STEP6 STEP7 STEP8 STEP9 STEP10 STEP11 STEP12 STEP13 STEP14 PATCHACDB DELETEACDB
+if [ -f "$AROMA_CFG" ]; then
+  ui_print "- Loading configuration from AROMA-Next ($AROMA_CFG)..."
+  . "$AROMA_CFG"
+elif [ -f "$RESTORE_SETTINGS" ]; then
+  ui_print "- Restoring previous profile from $RESTORE_SETTINGS..."
+  . "$RESTORE_SETTINGS"
 else
-  # Booted Android System (BOOTMODE=1 / true) -> Interactive Volume Key Selector
-  continue_script=true
-  if [ -f "$RESTORE_SETTINGS" ]; then
-    echo -e "\n$RESTORE"
-    show_menu $SMENU
-    if [ $? -eq 1 ]; then
-      continue_script=false
-      . "$RESTORE_SETTINGS"
-      export SAMPLERATE BITNES VOLMIC VOLMEDIA VOLSTEPS STEP6 STEP7 STEP8 STEP9 STEP10 STEP11 STEP12 STEP13 STEP14 PATCHACDB DELETEACDB
-    else
-      echo -e "$SMENUSKIP\n\n"
-      sleep 0.3
-    fi
-  fi
-
-  if [ "$continue_script" = "true" ]; then
-    # 01. Volume steps
-    echo -e "\n$STRINGSTEP1"
-    show_menu $SMENU1
-    case $? in
-    1) VOLSTEPS="false" ;;
-    2) VOLSTEPS="30" ;;
-    3) VOLSTEPS="50" ;;
-    4) VOLSTEPS="100" ;;
-    esac
-
-    # 02. Media volume
-    echo -e "\n\n\n$STRINGSTEP2"
-    show_menu $SMENU2
-    case $? in
-    1) VOLMEDIA="false" ;;
-    2) VOLMEDIA="78" ;;
-    3) VOLMEDIA="84" ;;
-    4) VOLMEDIA="90" ;;
-    5) VOLMEDIA="96" ;;
-    6) VOLMEDIA="102" ;;
-    7) VOLMEDIA="108" ;;
-    esac
-
-    # 03. Mic sensitivity
-    echo -e "\n\n\n$STRINGSTEP3"
-    show_menu $SMENU2
-    case $? in
-    1) VOLMIC="false" ;;
-    2) VOLMIC="78" ;;
-    3) VOLMIC="84" ;;
-    4) VOLMIC="90" ;;
-    5) VOLMIC="96" ;;
-    6) VOLMIC="102" ;;
-    7) VOLMIC="108" ;;
-    esac
-
-    # 04. Bit depth
-    echo -e "\n\n\n$STRINGSTEP4"
-    show_menu $SMENU4
-    case $? in
-    1) BITNES="false" ;;
-    2) BITNES="16" ;;
-    3) BITNES="24" ;;
-    4) BITNES="32" ;;
-    5) BITNES="float" ;;
-    esac
-
-    # 05. Sample rate
-    echo -e "\n\n\n$STRINGSTEP5"
-    show_menu $SMENU5
-    case $? in
-    1) SAMPLERATE="false" ;;
-    2) SAMPLERATE="44100" ;;
-    3) SAMPLERATE="48000" ;;
-    4) SAMPLERATE="96000" ;;
-    5) SAMPLERATE="192000" ;;
-    6) SAMPLERATE="384000" ;;
-    esac
-
-    # 06. DRC & Limiters
-    echo -e "\n\n\n$STRINGSTEP6\n"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP6=true
-
-    # 07. Vendor Hi-Fi
-    echo -e "\n\n\n$STRINGSTEP7"
-    if [ -n "$DEVFEASNEW" ] || [ -n "$DEVFEAS" ]; then
-      echo -e "$INSTALLSKIP"
-      show_menu $SMENU
-      [ $? -eq 1 ] && STEP7=true
-    else
-      echo -e "$SMENUAUTOSKIP\n"
-    fi
-
-    # 08. Sub-bass
-    echo -e "\n\n\n$STRINGSTEP8\n"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP8=true
-
-    # 09. build.prop
-    echo -e "\n\n\n$STRINGSTEP9\n"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP9=true
-
-    # 10. Bluetooth
-    echo -e "\n\n\n$STRINGSTEP10\n"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP10=true
-
-    # 11. Direct PCM
-    echo -e "\n\n\n$STRINGSTEP11"
-    if [ -n "$IOPOLICYS" ] || [ -n "$OUTPUTPOLICYS" ]; then
-      echo -e "$INSTALLSKIP"
-      show_menu $SMENU
-      [ $? -eq 1 ] && STEP11=true
-    else
-      echo -e "$SMENUAUTOSKIP\n"
-    fi
-
-    # 12. Audio effects
-    echo -e "\n\n\n$STRINGSTEP12"
-    show_menu $SMENU12
-    case $? in
-    1) STEP12="false" ;;
-    2) STEP12="part" ;;
-    3) STEP12="full" ;;
-    esac
-
-    # 13. Hardware tweaks
-    echo -e "\n\n\n$STRINGSTEP13\n"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP13=true
-
-    # 14. Dolby Atmos
-    echo -e "\n\n\n$STRINGSTEP14"
-    if { [ -n "$DAXES" ] || [ -n "$DCODECS" ]; } && [ "$STEP12" != "full" ]; then
-      echo -e "$INSTALLSKIP"
-      show_menu $SMENU
-      [ $? -eq 1 ] && STEP14=true
-    else
-      echo -e "$SMENUAUTOSKIP\n"
-    fi
-
-    # 15. ACDB
-    echo -e "\n\n\n"
-    if [ -n "$OLDACDBS" ]; then
-      ui_print "$STRINGSTEP15"
-      show_menu $SMENU15
-      case $? in
-      1) DELETEACDB="false" ;;
-      2) DELETEACDB="Basic" ;;
-      3) DELETEACDB="General" ;;
-      4) DELETEACDB="Speaker" ;;
-      esac
-    else
-      echo -e "$STRINGSTEP151"
-      case "$DEVICE" in alioth* | Pong* | marble* | RE5465* | mondrian* | ishtar* | aurora* | REE2B2L1* | PQ83A01*)
-        echo -e "$INSTALLSKIP"
-        show_menu $SMENU
-        [ $? -eq 1 ] && PATCHACDB=true
-        ;;
-      *)
-        echo -e "$SMENUAUTOSKIP\n"
-        ;;
-      esac
-    fi
-  fi
+  ui_print "- No interactive profile found; applying Audiophile Recommended defaults..."
+  VOLSTEPS="30"
+  VOLMEDIA="false"
+  VOLMIC="false"
+  BITNES="24"
+  SAMPLERATE="96000"
+  STEP6="true"
+  STEP7="true"
+  STEP8="true"
+  STEP9="true"
+  STEP10="true"
+  STEP11="true"
+  STEP12="part"
+  STEP13="true"
+  STEP14="true"
+  PATCHACDB="false"
+  DELETEACDB="false"
 fi
 
-echo -e "\n\n"
+# Device-capability guards
+[ "$STEP7" = "true" ] && [ -z "$DEVFEASNEW" ] && [ -z "$DEVFEAS" ] && STEP7="false"
+[ "$STEP11" = "true" ] && [ -z "$IOPOLICYS" ] && [ -z "$OUTPUTPOLICYS" ] && STEP11="false"
+if [ "$STEP14" = "true" ]; then
+  if [ "$STEP12" = "full" ] || { [ -z "$DAXES" ] && [ -z "$DCODECS" ]; }; then
+    STEP14="false"
+  fi
+fi
+[ "$DELETEACDB" != "false" ] && [ -z "$OLDACDBS" ] && DELETEACDB="false"
+export SAMPLERATE BITNES VOLMIC VOLMEDIA VOLSTEPS STEP6 STEP7 STEP8 STEP9 STEP10 STEP11 STEP12 STEP13 STEP14 PATCHACDB DELETEACDB
+
+ui_print " "
 final_print_text
 ui_print " "
 aroma_progress 0.25 "Patching audio policies & HAL configs..."

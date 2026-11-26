@@ -18,6 +18,8 @@ EXCLUDED_TOP = {
     ".gitignore",
     "dist",
     "docs",
+    "screenshots",
+    "CHANGELOG.md",
     "build.py",
     "__pycache__",
 }
