@@ -72,14 +72,31 @@ With **[AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)*
 > [!TIP]
 > **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.
 
-### 📦 Building the Flashable ZIP
-GitHub Actions automatically packages NLSound using **[`Miustone/aroma-next-action@v1`](https://github.com/Miustone/aroma-next-action)** (fetching the latest **ANI** binaries, Material 3 icons, themes, and fonts on the fly — zero ~5 MB binaries committed to this repository!).
+### ✨ Zero-Bloat CI Magic (`Miustone/aroma-next-action@v1`) & Building
+Look inside `META-INF/com/google/android/` — **279 vendored `ANI` binaries, themes, fonts, and icons are completely gone from Git!** Only NLSound's own 5 installer files (`aroma-config`, custom `magisk-installer`, `updater-script`, `nlsound-probe.sh`, `nlsound-summary.sh`) live in this repo.
 
-```sh
-# Local build (auto-fetches & caches ANI Magisk Template into .aroma-cache/, or pass --aroma-zip <path> offline)
-python build.py
+```text
+  NLSound Repo (Audio Payload + 5 Installer Files)   Miustone/AROMA-Next-Installer (Release)
+  ├─ common/ + system/ + customize.sh                ├─ arm64-v8a & armeabi-v7a ANI+ANF binaries
+  ├─ META-INF/.../aroma-config + nlsound-*.sh        ├─ AMOLED Modern + 7 Classic Themes
+  └─ META-INF/.../magisk-installer (custom override) ├─ 17 Material 3 Icons + 7 SIL OFL Fonts
+                         │                           └─ update-binary & aroma-mod-lib.sh
+                         └─────────────┬─────────────┘
+                                       ▼
+                  [ Miustone/aroma-next-action@v1 (template: magisk) ]
+                   Overlays NLSound files on top — custom overrides always win!
+                                       │
+                                       ▼
+             dist/NLSound-v4.5-AROMA-RC5-Next.zip  (297 entries, Recovery & App ready!)
 ```
-Outputs `dist/NLSound-v4.5-AROMA-RC5-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
+
+- **Automatic CI Releases:** [`.github/workflows/release.yml`](.github/workflows/release.yml) uses **[`Miustone/aroma-next-action@v1`](https://github.com/Miustone/aroma-next-action)** to fetch the latest official `ANI` + `ANF` release on every build, overlay NLSound's payload & custom `magisk-installer` (`settings.nls` preservation) on top, verify permissions/LF/`sh -n`, and publish the ready-to-flash ZIP automatically.
+- **Local Build:**
+  ```sh
+  # Auto-fetches & caches ANI Magisk Template into .aroma-cache/ (or pass --aroma-zip <path> offline)
+  python build.py
+  ```
+  Outputs `dist/NLSound-v4.5-AROMA-RC5-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
 
 ---
 
