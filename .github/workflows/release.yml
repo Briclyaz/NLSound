@@ -109,7 +109,8 @@ jobs:
                               out = Path(td) / info.filename
                               out.parent.mkdir(parents=True, exist_ok=True)
                               out.write_bytes(data)
-                              subprocess.run(["sh", "-n", str(out)], check=True)
+                              shell = "bash" if info.filename == "action.sh" else "sh"
+                              subprocess.run([shell, "-n", str(out)], check=True)
           print(f"[PASS] Verified {zip_path.name} ({len(names)} entries, custom magisk-installer, 0755 perms, LF & sh -n OK)")
           PY
           (cd dist && sha256sum "${{ steps.meta.outputs.zip_name }}" > SHA256SUMS.txt)
