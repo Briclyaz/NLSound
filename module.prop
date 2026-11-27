@@ -1,6 +1,6 @@
 id=NLSound
 name=NLSound (AROMA-Next Edition)
-version=v4.5-AROMA
-versionCode=1721
+version=v4.5-AROMA-RC5
+versionCode=1722
 author=NLSound Team (AROMA-Next Fork by Miustone)
-description=System-level Hi-Fi audio enhancement module featuring the AROMA-Next Touch GUI in Recovery (TWRP/OrangeFox/AERA) and Volume Key Selector fallback in Android System (BOOTMODE=1). Upstream: Briclyaz/NLSound | AROMA: Miustone/AROMA-Next-Installer
+description=System-level Hi-Fi audio enhancement module featuring AROMA-Next-Installer (ANI) V26.11-RC5 Material 3 Touch GUI & ANF in Recovery and native Volume Key Selector in Android System (BOOTMODE=1). Upstream: Briclyaz/NLSound | ANI: Miustone/AROMA-Next-Installer

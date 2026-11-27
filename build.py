@@ -20,6 +20,7 @@ EXCLUDED_TOP = {
     "docs",
     "screenshots",
     "CHANGELOG.md",
+    "XDA_THREAD.txt",
     "build.py",
     "__pycache__",
 }

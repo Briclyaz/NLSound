@@ -1,12 +1,12 @@
 ###
-# NLSound v4.5 — AROMA-Next-Installer Touch GUI Configuration
-# Powered by AROMA-Next-Installer V26.11 (https://github.com/Miustone/AROMA-Next-Installer)
+# NLSound v4.5 — AROMA-Next-Installer (ANI) V26.11-RC5 Touch GUI Configuration
+# Powered by AROMA-Next-Installer V26.11-RC5 (https://github.com/Miustone/AROMA-Next-Installer)
 # Upstream Audio Module: NLSound by NLSound Team (https://github.com/Briclyaz/NLSound)
 ###
 
 ini_set("rom_name",    "NLSound");
-ini_set("rom_version", "v4.5 (AROMA-Next)");
-ini_set("rom_author",  "NLSound Team • AROMA by Miustone");
+ini_set("rom_version", "v4.5 (ANI RC5)");
+ini_set("rom_author",  "NLSound Team • ANI by Miustone");
 ini_set("rom_device",  "Universal arm64/arm32");
 ini_set("rom_date",    "2026");
 
@@ -21,10 +21,10 @@ anisplash(
     "splash/a6", 30
 );
 
-#-- Default Typography (Google Sans SIL OFL) & Default Theme (Black & White)
+#-- Default Typography (Google Sans SIL OFL) & Modern AMOLED Theme (Monochrome White Default)
 fontresload("0", "ttf/GoogleSans-Regular.ttf;ttf/Roboto-Regular.ttf;ttf/DroidSansFallback.ttf;", "12");
 fontresload("1", "ttf/GoogleSans-Regular.ttf;ttf/Roboto-Regular.ttf;ttf/DroidSansFallback.ttf;", "14");
-theme("blacknwhite");
+theme("amoled");
 
 #-- Live Audio Hardware & Environment Probe
 pleasewait("Scanning audio hardware & partitions...");
@@ -52,7 +52,7 @@ viewbox(
 #-- Step 2: Setup Mode Hub (mode-aware: hides Recovery-only Filemanager in Android BOOTMODE=1)
 gotolabel("setup_menu");
 
-if prop("nls_env.prop", "is_volkey") == "1" then
+if is_volkey() == "1" then
     menubox(
         "Setup Mode",
         "Choose how you want to configure NLSound v4.5:",
@@ -77,8 +77,8 @@ else
             "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
         "Restore Previous Profile",
             "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update",
-        "AROMA-Next Filemanager & Modules",
-            "Inspect /data/adb/modules, storage & partitions right from Recovery", "@apps"
+        "AROMA-Next-Filemanager (ANF)",
+            "Bootloop-Saver, Modules, Storage, ZIP Inspector & Quick Reboot", "@apps"
     );
 endif;
 
@@ -239,7 +239,7 @@ if getvar("retstatus") == "0" then
         "Your configuration has been saved to <b>settings.nls</b> for 1-tap restore on future updates.\n\n" +
         "• <b>Root Manager:</b> Active automatically after reboot (Magisk / KernelSU / APatch).\n" +
         "• <b>Diagnostics:</b> Tap the module <b>Action</b> button in your root manager for NLSound Tools.\n" +
-        "• <b>Powered by:</b> AROMA-Next-Installer V26.11",
+        "• <b>Powered by:</b> AROMA-Next-Installer (ANI) V26.11-RC5",
         "@welcome",
         "Reboot device now",
         "0",

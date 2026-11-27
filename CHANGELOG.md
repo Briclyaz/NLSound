@@ -4,6 +4,24 @@ All notable changes in this **AROMA-Next Edition** fork of [Briclyaz/NLSound](ht
 
 ---
 
+## v4.5-AROMA-RC5 — 2026-11-27
+
+Engine upgrade to **[AROMA-Next-Installer (`ANI`) V26.11-RC5](https://github.com/Miustone/AROMA-Next-Installer)** & **[AROMA-Next-Filemanager (`ANF`)](https://github.com/Miustone/AROMA-Next-Installer)**.
+
+### Upgraded & Changed
+- **Upgraded Embedded Engine (`aroma_installer-arm64` & `aroma_installer-arm32`) to `ANI` V26.11-RC5:**
+  - Switched default theme to **`AMOLED Modern`** (`theme("amoled");`) — pure `#000000` OLED black surfaces, unified Material 3 rounded cards across the Welcome dashboard, Setup Hub, all 4 configuration pages, install log, and completion screen, **Monochrome White** default highlight, **8 Live Accent Colors**, and **17 redesigned Material 3 You icons** (all 7 classic themes preserved).
+  - **1-Tap Stay-Open Live Appearance Bottom Sheet (`3-Dot → Appearance`):** Switch Themes, Accent Colors, Fonts, and Transitions live in-place without closing or losing scroll position.
+  - **Slim Punch-Hole-Safe Top Status Bar:** Displays live clock + active A/B slot + battery level above the title bar.
+  - **Lossless PNG Screenshots (`Vol-Down + Power`):** Captures ~250 KB lossless PNGs via `libpng 1.6.59` instead of 9 MB BMPs.
+  - **Native `is_volkey()` Check in `aroma-config`:** Uses `ANI` RC5's built-in `is_volkey()` Edify function for mode-aware Setup Hub rendering.
+  - **Upgraded `ANF` Recovery Toolkit:** Adds 1-tap **Bootloop-Saver** (*Disable ALL / Re-Enable ALL Modules*), **ZIP Inspector & Extractor**, **Quick Reboot Menu**, `/tmp/recovery.log` backup, and Hardware Diagnostics export.
+  - **Upgraded `BOOTMODE=1` Volume Key Selector:** Adds step-back navigation (`<- Go Back` + `VOL-` long-press) and `--preset` unattended replay.
+  - **Fixed Linux MT Protocol Type-B Touch Scrolling:** Smooth touch scrolling on modern high-Hz OLED panels, mutex-protected touch FIFO queue, automatic CRLF Edify stripping, and expanded `2048`-byte dialog text buffers.
+- **Added `XDA_THREAD.txt`:** Ready-to-post XenForo 2 BBCode thread template (excluded from flashable ZIPs via `build.py`).
+
+---
+
 ## v4.5-AROMA — 2026-11-26
 
 ### Added

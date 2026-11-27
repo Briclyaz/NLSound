@@ -4,9 +4,9 @@
 
 # 🎵 NLSound — AROMA-Next Edition
 
-### System-level Android Hi-Fi Audio Enhancement Module with Full Touch GUI in Recovery (Powered by [AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer))
+### System-level Android Hi-Fi Audio Enhancement Module with Material 3 Touch GUI in Recovery (Powered by [AROMA-Next-Installer (`ANI`) V26.11-RC5](https://github.com/Miustone/AROMA-Next-Installer))
 
-[![AROMA-Next](https://img.shields.io/badge/AROMA--Next-V26.11%20Touch%20GUI-111111?style=for-the-badge&logo=android)](https://github.com/Miustone/AROMA-Next-Installer)
+[![AROMA-Next](https://img.shields.io/badge/ANI-V26.11--RC5%20Touch%20GUI-111111?style=for-the-badge&logo=android)](https://github.com/Miustone/AROMA-Next-Installer)
 [![Upstream](https://img.shields.io/badge/Upstream-Briclyaz%2FNLSound%20v4.5-0969DA?style=for-the-badge&logo=github)](https://github.com/Briclyaz/NLSound)
 [![Root](https://img.shields.io/badge/Root-Magisk%20%7C%20KernelSU%20%7C%20APatch-orange?style=for-the-badge&logo=android)](https://github.com/Briclyaz/NLSound)
 [![Recovery](https://img.shields.io/badge/Recovery-TWRP%20%7C%20OrangeFox%20%7C%20AERA-2EA043?style=for-the-badge)](https://github.com/Miustone/AROMA-Next-Installer)
@@ -65,9 +65,9 @@ With **[AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)*
 
 | Environment | Installer Experience | Highlights |
 | :--- | :--- | :--- |
-| **Custom Recovery** (`TWRP`, `OrangeFox`, `AERA`, `PitchBlack` — `BOOTMODE=0`) | **🎨 AROMA-Next Touch GUI** | Live hardware & SmartPA/DAC dashboard, **1-Tap Audiophile Preset**, **1-Tap Profile Restore**, all 15 options grouped into **4 clean touch screens** with Back support, live summary preview, animated 60–120Hz progress bar, **7 Google Sans/OFL fonts**, **6 live themes**, and built-in **AROMA-Next Filemanager & Root Module Manager**! |
-| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Built-In AROMA-Next Volume Key Selector** | Automatically renders the **exact same `aroma-config`** (`menubox`, `form`, `checkbox`, `selectbox`, `viewbox`) via native C `/dev/input` Volume Keys inside Magisk, KernelSU, or APatch — zero duplicate code! |
-| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Automatic Volume Key Fallback** | Never freezes recovery — switches automatically to AROMA-Next's native Volume Key Selector from the same `aroma-config`. |
+| **Custom Recovery** (`TWRP`, `OrangeFox`, `AERA`, `PitchBlack` — `BOOTMODE=0`) | **🎨 `ANI` V26.11-RC5 Material 3 Touch GUI** | **AMOLED Modern** Material 3 You default theme (**Monochrome White** default + **8 Live Accents**), **17 redesigned Material 3 icons**, punch-hole-safe **Top Status Bar**, 1-tap stay-open **Appearance Bottom Sheet**, lossless **PNG screenshots**, live SmartPA/DAC dashboard, **1-Tap Audiophile Preset**, **1-Tap Profile Restore**, all 15 options across **4 touch screens**, and integrated **AROMA-Next-Filemanager (`ANF`)** with 1-tap **Bootloop-Saver**! |
+| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Built-In `ANI` Volume Key Selector** | Automatically renders the **exact same `aroma-config`** (`menubox`, `form`, `checkbox`, `selectbox`, `viewbox`) via native C `/dev/input` Volume Keys with **Go Back navigation** (`<- Go Back` / `VOL-` long-press) and `--preset` replay — zero duplicate code! |
+| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Automatic Volume Key Fallback** | Never freezes recovery — switches automatically to `ANI`'s native Volume Key Selector from the same `aroma-config`. |
 
 > [!TIP]
 > **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.
