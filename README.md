@@ -73,10 +73,13 @@ With **[AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)*
 > **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.
 
 ### 📦 Building the Flashable ZIP
+GitHub Actions automatically packages NLSound using **[`Miustone/aroma-next-action@v1`](https://github.com/Miustone/aroma-next-action)** (fetching the latest **ANI** binaries, Material 3 icons, themes, and fonts on the fly — zero ~5 MB binaries committed to this repository!).
+
 ```sh
+# Local build (auto-fetches & caches ANI Magisk Template into .aroma-cache/, or pass --aroma-zip <path> offline)
 python build.py
 ```
-Outputs `dist/NLSound-v4.5-AROMA-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
+Outputs `dist/NLSound-v4.5-AROMA-RC5-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
 
 ---
 

@@ -1,4 +1,10 @@
 dist/
+.aroma-cache/
+*.zip
 __pycache__/
 *.pyc
+.DS_Store
+Thumbs.db
+*.log
 *.log.txt
+*.bmp

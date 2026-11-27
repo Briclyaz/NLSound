@@ -1,0 +1,137 @@
+name: Build, Verify & Release NLSound
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*', 'V*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read NLSound version from module.prop
+        id: meta
+        shell: bash
+        run: |
+          VER="$(grep -E '^version=' module.prop | head -n1 | cut -d'=' -f2- | tr -d '\r')"
+          echo "version=${VER:-v4.5-AROMA-RC5}" >> "$GITHUB_OUTPUT"
+          echo "zip_name=NLSound-${VER:-v4.5-AROMA-RC5}-Next.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Package NLSound with AROMA-Next-Installer Action
+        id: ani
+        uses: Miustone/aroma-next-action@v1
+        with:
+          source_dir: .
+          template: magisk
+          aroma_version: latest
+          architectures: arm64,arm32
+          output_zip: dist/${{ steps.meta.outputs.zip_name }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          exclude: |
+            .aroma-cache
+            .aroma-cache/*
+            .gitignore
+            docs
+            docs/*
+            screenshots
+            screenshots/*
+            CHANGELOG.md
+            XDA_THREAD.txt
+            README.md
+            README_RU.md
+            README_ZH.md
+            build.py
+
+      - name: Verify ZIP structure, permissions, LF endings & POSIX sh syntax
+        run: |
+          echo "Packaged with ANI release: ${{ steps.ani.outputs.aroma_release }} (${{ steps.ani.outputs.zip_size }} bytes)"
+          python3 - <<'PY'
+          import subprocess, tempfile, zipfile
+          from pathlib import Path
+
+          zip_path = Path("dist/${{ steps.meta.outputs.zip_name }}")
+          assert zip_path.is_file(), f"Missing ZIP: {zip_path}"
+          with zipfile.ZipFile(zip_path, "r") as zf:
+              names = set(zf.namelist())
+              required = {
+                  "module.prop",
+                  "customize.sh",
+                  "action.sh",
+                  "service.sh",
+                  "post-fs-data.sh",
+                  "common/install.sh",
+                  "system/bin/tinymix_ext",
+                  "META-INF/com/google/android/update-binary",
+                  "META-INF/com/google/android/updater-script",
+                  "META-INF/com/google/android/magisk-installer",
+                  "META-INF/com/google/android/aroma-mod-lib.sh",
+                  "META-INF/com/google/android/aroma-config",
+                  "META-INF/com/google/android/nlsound-probe.sh",
+                  "META-INF/com/google/android/nlsound-summary.sh",
+                  "META-INF/com/google/android/bin/aroma_installer-arm64",
+                  "META-INF/com/google/android/bin/aroma_installer-arm32",
+                  "META-INF/com/google/android/aroma/themes/amoled/theme.prop",
+                  "META-INF/com/google/android/aroma/ttf/GoogleSans-Regular.ttf",
+              }
+              missing = required - names
+              assert not missing, f"Missing required entries: {missing}"
+              assert "META-INF/com/google/android/update-binary-installer" not in names
+              assert "build.py" not in names and "XDA_THREAD.txt" not in names
+
+              # Verify custom NLSound magisk-installer override won over template default
+              mi = zf.read("META-INF/com/google/android/magisk-installer").decode("utf-8")
+              assert "saved_settings.nls" in mi, "Custom NLSound magisk-installer override missing!"
+
+              with tempfile.TemporaryDirectory() as td:
+                  for info in zf.infolist():
+                      p = Path(info.filename)
+                      mode = (info.external_attr >> 16) & 0o777
+                      if p.name in ("update-binary", "magisk-installer", "aroma_installer-arm64", "aroma_installer-arm32") or p.suffix == ".sh":
+                          assert mode == 0o755, f"{info.filename} mode={oct(mode)}, expected 0o755"
+                      if p.suffix in (".sh", ".prop", ".edify") or p.name in ("aroma-config", "update-binary", "magisk-installer", "customize.sh"):
+                          data = zf.read(info.filename)
+                          assert b"\r" not in data, f"{info.filename} contains CR bytes!"
+                          if p.suffix == ".sh" or p.name in ("update-binary", "magisk-installer"):
+                              out = Path(td) / info.filename
+                              out.parent.mkdir(parents=True, exist_ok=True)
+                              out.write_bytes(data)
+                              subprocess.run(["sh", "-n", str(out)], check=True)
+          print(f"[PASS] Verified {zip_path.name} ({len(names)} entries, custom magisk-installer, 0755 perms, LF & sh -n OK)")
+          PY
+          (cd dist && sha256sum "${{ steps.meta.outputs.zip_name }}" > SHA256SUMS.txt)
+          cat dist/SHA256SUMS.txt
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nlsound-aroma-next-zip
+          path: |
+            dist/${{ steps.meta.outputs.zip_name }}
+            dist/SHA256SUMS.txt
+
+      - name: Create GitHub Release (Tag or Rolling Latest)
+        if: github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'latest' }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && format('NLSound {0}', github.ref_name) || 'NLSound AROMA-Next (Latest Build)' }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') || contains(github.ref_name, '-PRE') || contains(github.ref_name, '-TEST') }}
+          generate_release_notes: true
+          make_latest: ${{ startsWith(github.ref, 'refs/tags/') && !contains(github.ref_name, '-PRE') && !contains(github.ref_name, '-TEST') && 'true' || 'false' }}
+          files: |
+            dist/${{ steps.meta.outputs.zip_name }}
+            dist/SHA256SUMS.txt
