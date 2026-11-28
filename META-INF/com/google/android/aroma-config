@@ -1,0 +1,263 @@
+###
+# NLSound v4.5 — AROMA-Next-Installer (ANI) V26.11-RC5 Touch GUI Configuration
+# Powered by AROMA-Next-Installer V26.11-RC5 (https://github.com/Miustone/AROMA-Next-Installer)
+# Upstream Audio Module: NLSound by NLSound Team (https://github.com/Briclyaz/NLSound)
+###
+
+ini_set("rom_name",    "NLSound");
+ini_set("rom_version", "v4.5 (ANI RC5)");
+ini_set("rom_author",  "NLSound Team • ANI by Miustone");
+ini_set("rom_device",  "Universal arm64/arm32");
+ini_set("rom_date",    "2026");
+
+#-- Classic AROMA-Next HiDPI Nostalgia Splash Animation
+anisplash(
+    2,
+    "splash/a1", 400,
+    "splash/a2", 30,
+    "splash/a3", 30,
+    "splash/a4", 30,
+    "splash/a5", 30,
+    "splash/a6", 30
+);
+
+#-- Default Typography (Google Sans SIL OFL) & Modern AMOLED Theme (Monochrome White Default)
+fontresload("0", "ttf/GoogleSans-Regular.ttf;ttf/Roboto-Regular.ttf;ttf/DroidSansFallback.ttf;", "12");
+fontresload("1", "ttf/GoogleSans-Regular.ttf;ttf/Roboto-Regular.ttf;ttf/DroidSansFallback.ttf;", "14");
+theme("amoled");
+
+#-- Live Audio Hardware & Environment Probe
+pleasewait("Scanning audio hardware & partitions...");
+ziptotmp("META-INF/com/google/android/nlsound-probe.sh", "nlsound-probe.sh");
+exec("/sbin/sh", "/tmp/aroma/nlsound-probe.sh");
+
+if prop("nls_env.prop", "can_install") != "1" then
+    alert(
+        "Root Target Notice",
+        "<b>/data/adb was not found or /data is encrypted!</b>\n\n" +
+        "To install NLSound from Recovery:\n" +
+        "• Decrypt /data in Recovery first, and ensure Magisk, KernelSU, or APatch is installed.\n\n" +
+        "You can still explore the full AROMA-Next Touch GUI in preview, or flash this ZIP inside your Root Manager app (Volume Key mode).",
+        "@alert"
+    );
+endif;
+
+#-- Step 1: Welcome & Live Audio Hardware Dashboard
+viewbox(
+    "NLSound • AROMA-Next",
+    readtmpfile("nls_hw_summary.txt"),
+    "@welcome"
+);
+
+#-- Step 2: Setup Mode Hub (mode-aware: hides Recovery-only Filemanager in Android BOOTMODE=1)
+gotolabel("setup_menu");
+
+if is_volkey() == "1" then
+    menubox(
+        "Setup Mode",
+        "Choose how you want to configure NLSound v4.5:",
+        "@customize",
+        "setup_mode.prop",
+        "Custom Configuration (Step-by-Step)",
+            "Configure all 15 audio options across 4 grouped sections", "@personalize",
+        "Audiophile Recommended (1-Tap)",
+            "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
+        "Restore Previous Profile",
+            "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update"
+    );
+else
+    menubox(
+        "Setup Mode",
+        "Choose how you want to configure NLSound v4.5:",
+        "@customize",
+        "setup_mode.prop",
+        "Custom Configuration (Touch Wizard)",
+            "Configure all 15 audio options visually across 4 clean screens", "@personalize",
+        "Audiophile Recommended (1-Tap)",
+            "Instant Hi-Fi preset: 30 steps, 24-bit/96kHz, DRC off, 4Hz bass, BT HD & Tinymix", "@install",
+        "Restore Previous Profile",
+            "Saved profile: " + prop("nls_env.prop", "saved_info"), "@update",
+        "AROMA-Next-Filemanager (ANF)",
+            "Bootloop-Saver, Modules, Storage, ZIP Inspector & Quick Reboot", "@apps"
+    );
+endif;
+
+#-- Handle Filemanager launch and return cleanly to Setup Mode Hub (Recovery Touch GUI)
+if prop("setup_mode.prop", "selected") == "4" then
+    filemanager("/data/adb/modules");
+    goto("setup_menu");
+endif;
+
+#-- Guard Restore option if no saved profile exists yet
+if prop("setup_mode.prop", "selected") == "3" then
+    if prop("nls_env.prop", "has_saved") != "1" then
+        alert(
+            "No Saved Profile Found",
+            "No previous <b>/data/adb/modules/NLSound/settings.nls</b> profile was detected on this device.\n\n" +
+            "Please choose <b>Custom Configuration</b> or <b>Audiophile Recommended</b> instead.",
+            "@info"
+        );
+        goto("setup_menu");
+    endif;
+endif;
+
+#-- Custom Configuration Wizard (4 Clean Touch Screens covering all 15 NLSound steps)
+if prop("setup_mode.prop", "selected") == "1" then
+
+    #-- Page 1/4: Volume Steps, Hardware Mixer Volume & Microphone Gain (Steps 01-03)
+    form(
+        "1/4 • Volume & Hardware Gain",
+        "Configure media volume steps, mixer preamp gain, and microphone sensitivity:",
+        "@personalize",
+        "vol_gain.prop",
+        "volsteps", "01. Media Volume Control Steps (Stock = 15)", "", "group",
+            "skip",  "Skip (Keep Stock 15)",    "Leave Android default volume slider steps",            "select",
+            "30",    "30 Steps [Recommended]",  "Balanced smooth volume control",                       "select.selected",
+            "50",    "50 Steps",                "Fine, smooth volume transitions",                      "select",
+            "100",   "100 Steps",               "Ultra fine-grained volume control",                    "select",
+        "volmedia", "02. Max Hardware Volume / Mixer Gain (Speakers & Wired)", "", "group",
+            "skip",  "Skip (Keep Stock) [Safe]","Keep factory mixer gain (no clipping risk)",           "select.selected",
+            "78",    "78 (Lower)",              "Slightly quieter than stock level",                    "select",
+            "84",    "84 (Stock Level)",        "Factory nominal digital preamp level",                 "select",
+            "90",    "90 (Moderate Boost)",     "Clean moderate gain increase",                         "select",
+            "96",    "96 (Clean Limit)",        "Noticeable boost at clean headroom ceiling",           "select",
+            "102",   "102 (High Boost)",        "Loud — possible distortion on peaks",                  "select",
+            "108",   "108 (Maximum Gain)",      "Extreme gain — high distortion risk",                  "select",
+        "volmic", "03. Microphone Sensitivity / DEC Gain", "", "group",
+            "skip",  "Skip (Keep Stock) [Safe]","Keep factory microphone recording gain",               "select.selected",
+            "78",    "78 (Lower Gain)",         "Reduces clipping in loud/noisy places",                "select",
+            "84",    "84 (Stock Level)",        "Factory nominal microphone level",                     "select",
+            "90",    "90 (Slight Boost)",       "Gentle sensitivity boost for calls & video",           "select",
+            "96",    "96 (Quiet Voices)",       "Recommended for capturing quieter voices",             "select",
+            "102",   "102 (High Sensitivity)",  "Strong amplification (may pick up room hiss)",         "select",
+            "108",   "108 (Maximum Gain)",      "Extreme gain — high distortion/noise risk",            "select"
+    );
+
+    #-- Page 2/4: PCM Bit Depth & Hardware Sample Rate (Steps 04-05)
+    form(
+        "2/4 • Audio Format & Sample Rate",
+        "Set primary PCM bit depth and hardware output sampling rate:",
+        "@personalize",
+        "format_rate.prop",
+        "bitnes", "04. Audio PCM Bit Depth", "", "group",
+            "skip",  "Skip (System Default)",   "Keep stock audio policy bit depth",                    "select",
+            "16",    "16-bit PCM",              "Standard CD-quality 16-bit PCM",                       "select",
+            "24",    "24-bit PCM [Recommended]","High-resolution 24-bit PCM (widest codec support)",    "select.selected",
+            "32",    "32-bit PCM",              "32-bit integer PCM (check codec compatibility)",       "select",
+            "float", "32-bit Floating Point",   "PCM Float (advanced — not supported by all codecs)",   "select",
+        "samplerate", "05. Hardware Output Sample Rate", "", "group",
+            "skip",   "Skip (System Default)",  "Keep stock Android 48 kHz output",                     "select",
+            "44100",  "44,100 Hz (44.1 kHz)",   "Standard CD sampling frequency",                       "select",
+            "48000",  "48,000 Hz (48 kHz)",     "Android & video native standard",                      "select",
+            "96000",  "96,000 Hz [Recommended]","Native Hi-Res playback without downsampling",          "select.selected",
+            "192000", "192,000 Hz (192 kHz)",   "Ultra Hi-Res (higher DSP/CPU load)",                   "select",
+            "384000", "384,000 Hz (384 kHz)",   "Maximum rate (only for top-tier Hi-Fi DACs)",          "select"
+    );
+
+    #-- Page 3/4: Core Audio Engine, Wireless & Hardware Tweaks (Steps 06-11, 13)
+    checkbox(
+        "3/4 • Audio Engine & Hardware",
+        "Toggle the system-level audio engine patches you want to apply:",
+        "@customize",
+        "engine_tweaks.prop",
+        "Signal Purity & Dynamics", "", 2,
+            "06. Disable Sound Limiters & DRC",
+                "Removes DRC, softclip, compander & low-battery audio throttling", 1,
+            "08. Headphone Sub-Bass HPF (4 Hz)",
+                "Lowers HPF cutoff from ~25 Hz to 4 Hz & enables Hi-Fi amp power mode", 1,
+            "11. Direct PCM Audio Routing",
+                "Adds DIRECT_PCM flags for bit-perfect players (Poweramp, UAPP, Neutron)", 1,
+        "System, Wireless & Hardware Registers", "", 2,
+            "07. Unlock Vendor Hi-Fi Features",
+                "Enables OEM Hi-Fi, 24-bit recording & Pro-Audio (Xiaomi/OnePlus/Oppo/Realme)", 1,
+            "09. build.prop Engine Tweaks",
+                "Tunes resampler PSD, lowers AAudio MMAP latency & disables AAC DRC", 1,
+            "10. Bluetooth Audio Optimization",
+                "Unlocks SBC HD Dual Channel, aptX Adaptive & disables Absolute Volume", 1,
+            "13. Hardware-Specific Tweaks (Tinymix)",
+                "Applies boot-time ALSA registers tailored to your SmartPA, DAC & model", 1
+    );
+
+    #-- Page 4/4: Audio Effects Policy, Dolby Atmos & ACDB (Steps 12, 14, 15)
+    form(
+        "4/4 • Effects, Dolby & ACDB",
+        "Configure system audio effect chains, Dolby Atmos tuning, and Qualcomm ACDB:",
+        "@customize",
+        "effects_acdb.prop",
+        "effects", "12. System Audio Effects Policy", "", "group",
+            "skip",    "Keep All Effects",            "Leave stock equalizers & vendor spatial effects untouched", "select",
+            "part",    "Partial Cleanup [Recommended]","Removes fake 3D & reverbs; keeps EQs & Dolby Atmos",      "select.selected",
+            "full",    "Disable All Effects",         "Pure unprocessed signal (disables Dolby/Dirac & Step 14)", "select",
+        "dolby", "14. Dolby Atmos Tuning", "", "group",
+            "dolby_tune", "Apply Dolby Atmos Hi-Fi Profile",
+                "Disables volume leveler pumping & fake surround (auto-skipped if Effects = Disable All)",        "check.checked",
+        "acdb", "15. Qualcomm ACDB Calibration", "", "group",
+            "skip",    "Keep Stock ACDB [Recommended]","Safest option — preserves factory calibration files",     "select.selected",
+            "basic",   "Override Basic",              "Unlocks AUX, Bluetooth & HDMI calibration caps",           "select",
+            "general", "Override General",            "Basic + clears general/global ACDB calibration",           "select",
+            "speaker", "Override Speakers [Caution]", "Clears speaker limits (may rattle at maximum volume)",     "select",
+            "patched", "Download Pre-Patched ACDB",   "Model-specific tuned ACDB (supported phones + internet)",  "select"
+    );
+
+endif;
+
+#-- Compile canonical nlsound.cfg & live summary preview
+ziptotmp("META-INF/com/google/android/nlsound-summary.sh", "nlsound-summary.sh");
+exec("/sbin/sh", "/tmp/aroma/nlsound-summary.sh");
+
+#-- Step 5: Confirmation Summary Screen
+ini_set("text_next", "Install Now");
+ini_set("icon_next", "@installbutton");
+
+viewbox(
+    "Ready to Install NLSound",
+    readtmpfile("summary.txt"),
+    "@install"
+);
+
+ini_set("text_next", "Next");
+ini_set("icon_next", "@next");
+
+#-- Step 6: Live Installation Progress (executes magisk-installer -> customize.sh -> install.sh)
+setvar("retstatus",
+    install(
+        "Installing NLSound v4.5",
+        "Patching audio policies, mixer paths & hardware profiles...",
+        "@install",
+        "NLSound installation finished. Tap Save Logs or Next to continue."
+    )
+);
+
+#-- Step 7: Completion & Optional Reboot
+ini_set("text_next", "Finish");
+ini_set("icon_next", "@finish");
+
+if getvar("retstatus") == "0" then
+    checkviewbox(
+        "Installation Complete",
+        "<#selectbg_g><b>NLSound v4.5 Installed Successfully!</b></#>\n\n" +
+        "Your configuration has been saved to <b>settings.nls</b> for 1-tap restore on future updates.\n\n" +
+        "• <b>Root Manager:</b> Active automatically after reboot (Magisk / KernelSU / APatch).\n" +
+        "• <b>Diagnostics:</b> Tap the module <b>Action</b> button in your root manager for NLSound Tools.\n" +
+        "• <b>Powered by:</b> AROMA-Next-Installer (ANI) V26.11-RC5",
+        "@welcome",
+        "Reboot device now",
+        "0",
+        "reboot_it"
+    );
+else
+    checkviewbox(
+        "Installation Finished with Warnings",
+        "<b>Installer exited with status " + getvar("retstatus") + ".</b>\n\n" +
+        "Please check the install log (or ensure /data is decrypted and Magisk / KernelSU / APatch is installed).\n\n" +
+        "You can also flash this ZIP directly inside your Root Manager app.",
+        "@alert",
+        "Reboot device now",
+        "0",
+        "reboot_it"
+    );
+endif;
+
+if getvar("reboot_it") == "1" then
+    reboot("onfinish");
+endif;

@@ -1,0 +1,56 @@
+[CENTER][SIZE=6][B][COLOR=#0099CC]NLSound[/COLOR] — AROMA-Next Edition ([COLOR=#0099CC]v4.5-AROMA-RC5[/COLOR])[/B][/SIZE]
+[SIZE=3]System-Level Android Hi-Fi Audio Enhancement Module — Powered by [B][COLOR=#0099CC]AROMA-Next-Installer (ANI) V26.11-RC5[/COLOR][/B] for Custom Recoveries & [B][COLOR=#00AA55]Magisk / KernelSU / APatch[/COLOR][/B][/SIZE]
+[COLOR=#7F8C8D][I]AMOLED Modern Material 3 Touch GUI • 1-Tap Audiophile Preset • 1-Tap Profile Restore • Live SmartPA/DAC Hardware Dashboard • Native BOOTMODE=1 VolKey Selector • Integrated ANF[/I][/COLOR][/CENTER]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[SIZE=5][B][COLOR=#0099CC]Screenshots[/COLOR][/B][/SIZE] [COLOR=#7F8C8D](Pixel 7 Pro • OrangeFox R12.0 — Click thumbnails for full QHD+ resolution)[/COLOR]
+
+[SPOILER="Click to view Screenshots (4 Thumbnails — Full QHD+ on Click)"]
+[CENTER]
+[URL=https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/01-welcome-dashboard.png][IMG]https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/thumbs/01-welcome-dashboard.png[/IMG][/URL] [URL=https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/02-setup-mode.png][IMG]https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/thumbs/02-setup-mode.png[/IMG][/URL] [URL=https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/03-live-install-log.png][IMG]https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/thumbs/03-live-install-log.png[/IMG][/URL] [URL=https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/04-install-complete.png][IMG]https://raw.githubusercontent.com/Miustone/NLSound/main/screenshots/thumbs/04-install-complete.png[/IMG][/URL]
+
+[COLOR=#7F8C8D][SIZE=2]1. Welcome & Live Hardware Dashboard • 2. Setup Mode Hub • 3. Live Install & Summary Log • 4. Complete & 1-Tap Reboot[/SIZE][/COLOR]
+[/CENTER]
+[/SPOILER]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[SIZE=5][B][COLOR=#0099CC]What is NLSound (AROMA-Next Edition)?[/COLOR][/B][/SIZE]
+[B]NLSound — AROMA-Next Edition[/B] is the official [B]AROMA-Next-Installer (ANI) V26.11-RC5[/B] edition of [URL=https://github.com/Briclyaz/NLSound]Briclyaz/NLSound v4.5[/URL]. It removes MMT-Extended and the legacy 200-line bash Volume Key menu in favor of [B]ONE single [ICODE]aroma-config[/ICODE][/B] that delivers:
+[LIST]
+[*][B][COLOR=#0099CC]Custom Recovery (TWRP / OrangeFox / AERA / PitchBlack — BOOTMODE=0):[/COLOR][/B] Full 60–120Hz [B]AMOLED Modern Material 3 You Touch GUI[/B] (Monochrome White default + 8 Live Accents, 17 redesigned icons, Top Status Bar, 1-tap stay-open Appearance Bottom Sheet, lossless PNG screenshots) with a live SmartPA/DAC hardware dashboard, [B]1-Tap Audiophile Preset[/B], [B]1-Tap Profile Restore[/B], and all 15 audio tweaks cleanly grouped into [B]4 visual screens[/B]!
+[*][B][COLOR=#00AA55]Magisk / KernelSU / APatch App (BOOTMODE=1):[/COLOR][/B] Automatic native C [B]Volume Key Selector[/B] rendered straight from the exact same [ICODE]aroma-config[/ICODE] — complete with 48-column UTF-8 word-wrapping, [B]Go Back navigation[/B] ([ICODE]<- Go Back[/ICODE] / [ICODE]VOL-[/ICODE] long-press), and [ICODE]--preset[/ICODE] automation!
+[*][B][COLOR=#9B59B6]Integrated AROMA-Next-Filemanager (ANF):[/COLOR][/B] Built right into the Setup Hub and 3-Dot Menu with 1-tap [B]Bootloop-Saver (Disable ALL Modules)[/B], Module Manager, Storage/System browser, ZIP Inspector, and Quick Reboot.
+[/LIST]
+
+[SIZE=4][B][COLOR=#0099CC]Audio Highlights (NLSound v4.5)[/COLOR][/B][/SIZE]
+[LIST]
+[*][B]Smooth Volume & Hardware Gain:[/B] 30 / 50 / 100 media volume steps, independent speaker/wired mixer preamp gain (78–108), and microphone DEC sensitivity tuning.
+[*][B]True Hi-Fi & Sub-Bass Restoration:[/B] Lowers headphone High-Pass Filter (HPF) down to [B]4 Hz[/B], unlocks [ICODE]DIRECT_PCM[/ICODE] bit-perfect routing (Poweramp, UAPP, Neutron), and supports up to 24/32-bit PCM & 96/192/384 kHz output.
+[*][B]Dynamics & Wireless:[/B] Disables DRC, softclip, compander & low-battery throttling; unlocks [B]Bluetooth SBC HD Dual Channel[/B], aptX Adaptive & disables buggy Absolute Volume.
+[*][B]Effects, Dolby Atmos & Hardware Tinymix:[/B] Partial or full effects cleanup, clean linear Dolby Atmos DAX profile, Qualcomm ACDB options, and automatic model-specific [ICODE]tinymix[/ICODE] hardware registers (Cirrus Logic, TI TAS, NXP TFA, Awinic, Qualcomm WSA/WCD, ESS Sabre, AKM).
+[*][B]Shared [ICODE]settings.nls[/ICODE] Profiles:[/B] Profiles saved in Recovery and profiles saved in Magisk / KernelSU / APatch are 100% interchangeable for 1-tap restore on future updates!
+[/LIST]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[SIZE=5][B][COLOR=#0099CC]Downloads & Installation[/COLOR][/B][/SIZE]
+[B]GitHub Repository & Releases:[/B] [URL=https://github.com/Miustone/NLSound]https://github.com/Miustone/NLSound[/URL]
+
+[LIST=1]
+[*]Download [B][COLOR=#00AA55]NLSound-v4.5-AROMA-RC5-Next.zip[/COLOR][/B] (or build locally via [ICODE]python build.py[/ICODE]).
+[*]Flash in [B]Custom Recovery[/B] (TWRP / OrangeFox / AERA → Material 3 Touch GUI) or in [B]Magisk / KernelSU / APatch[/B] (native Volume Key Selector).
+[*]Pick [B]Audiophile Recommended (1-Tap)[/B], [B]Custom Configuration[/B], or [B]Restore Previous Profile[/B].
+[*]Review the live summary, tap [B]Install Now[/B], and reboot!
+[/LIST]
+
+[CENTER][COLOR=#555555]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/COLOR][/CENTER]
+
+[SIZE=4][B][COLOR=#0099CC]Links & Credits[/COLOR][/B][/SIZE]
+[LIST]
+[*][B]NLSound (AROMA-Next Edition):[/B] [URL=https://github.com/Miustone/NLSound]https://github.com/Miustone/NLSound[/URL]
+[*][B]Upstream Audio Engine:[/B] [URL=https://github.com/Briclyaz/NLSound]NLSound Team (Briclyaz/NLSound v4.5)[/URL]
+[*][B]Powered by AROMA-Next-Installer (ANI V26.11-RC5) & ANF:[/B] [URL=https://github.com/Miustone/AROMA-Next-Installer]GitHub[/URL] • [URL=https://xdaforums.com/t/aroma-next-installer.4809387/]XDA Thread[/URL]
+[*][B]Maintainer (AROMA-Next Edition):[/B] [URL=https://xdaforums.com/m/miustone.4756773/][COLOR=#00AA55]Miustone[/COLOR][/URL] (XDA & [URL=https://github.com/Miustone]GitHub[/URL])
+[/LIST]

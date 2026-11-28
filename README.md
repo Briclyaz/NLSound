@@ -2,24 +2,103 @@
 
 [ **English** ] • [ [Русский](README_RU.md) ] • [ [繁體中文](README_ZH.md) ]
 
-# 🎵 NLSound
+# 🎵 NLSound — AROMA-Next Edition
 
-### An open-source, system-level audio enhancement module for Android.
+### System-level Android Hi-Fi Audio Enhancement Module with Material 3 Touch GUI in Recovery (Powered by [AROMA-Next-Installer (`ANI`) V26.11-RC5](https://github.com/Miustone/AROMA-Next-Installer))
 
-[![GitHub Release](https://img.shields.io/github/v/release/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=blue&logo=github)](https://github.com/Briclyaz/NLSound_module_QCom/releases)
-[![Downloads](https://img.shields.io/github/downloads/Briclyaz/NLSound_module_QCom/total?style=for-the-badge&logo=github&color=34D399)](https://github.com/Briclyaz/NLSound_module_QCom/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=gold&logo=github)](https://github.com/Briclyaz/NLSound_module_QCom/stargazers)
-[![Root](https://img.shields.io/badge/Root-Magisk%20%7C%20KernelSU%20%7C%20APatch-orange?style=for-the-badge&logo=android)](https://github.com/Briclyaz/NLSound_module_QCom)
-[![Platform](https://img.shields.io/badge/Platform-Qualcomm%20%7C%20MediaTek-blue?style=for-the-badge)](https://github.com/Briclyaz/NLSound_module_QCom)
-[![License](https://img.shields.io/github/license/Briclyaz/NLSound_module_QCom?style=for-the-badge&color=gray)](LICENSE)
-[![Telegram Updates](https://img.shields.io/badge/Channel-@nlsound__updates-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/nlsound_updates)
-[![Telegram Support](https://img.shields.io/badge/Support-@nlsound__support-2CA5E0?style=for-the-badge&logo=telegram)](https://t.me/nlsound_support)
+[![AROMA-Next](https://img.shields.io/badge/ANI-V26.11--RC5%20Touch%20GUI-111111?style=for-the-badge&logo=android)](https://github.com/Miustone/AROMA-Next-Installer)
+[![Upstream](https://img.shields.io/badge/Upstream-Briclyaz%2FNLSound%20v4.5-0969DA?style=for-the-badge&logo=github)](https://github.com/Briclyaz/NLSound)
+[![Root](https://img.shields.io/badge/Root-Magisk%20%7C%20KernelSU%20%7C%20APatch-orange?style=for-the-badge&logo=android)](https://github.com/Briclyaz/NLSound)
+[![Recovery](https://img.shields.io/badge/Recovery-TWRP%20%7C%20OrangeFox%20%7C%20AERA-2EA043?style=for-the-badge)](https://github.com/Miustone/AROMA-Next-Installer)
+[![Platform](https://img.shields.io/badge/Platform-Qualcomm%20%7C%20MediaTek-blue?style=for-the-badge)](https://github.com/Briclyaz/NLSound)
 
-<a href="https://github.com/Briclyaz/NLSound_module_QCom/releases/latest">
-  <img src="https://img.shields.io/badge/⚡_DOWNLOAD_LATEST_RELEASE-0969DA?style=for-the-badge&logo=github&logoColor=white" height="42" alt="Download Latest Release"/>
-</a>
+[Screenshots](#-screenshots-recovery-touch-gui) • [Why AROMA-Next](#-why-this-fork--one-aroma-config-zero-mmt-extended) • [Features](#-key-features-at-a-glance) • [Changelog](CHANGELOG.md) • [AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)
 
 </div>
+
+---
+
+## 📸 Screenshots (Recovery Touch GUI)
+
+<p align="center">
+  <em>Captured live on Google Pixel 7 Pro (<code>cheetah</code>) • OrangeFox R12.0 • Black &amp; White Theme + Google Sans — Click any screenshot for full QHD+ resolution</em>
+</p>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <a href="screenshots/01-welcome-dashboard.png">
+          <img src="screenshots/thumbs/01-welcome-dashboard.png" width="190" alt="Welcome &amp; Live Hardware Dashboard">
+        </a><br>
+        <sub><b>1. Welcome &amp; Hardware Dashboard</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/02-setup-mode.png">
+          <img src="screenshots/thumbs/02-setup-mode.png" width="190" alt="Setup Mode Hub">
+        </a><br>
+        <sub><b>2. Setup Mode Hub</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/03-live-install-log.png">
+          <img src="screenshots/thumbs/03-live-install-log.png" width="190" alt="Live Install Progress &amp; Log">
+        </a><br>
+        <sub><b>3. Live Install &amp; Summary Log</b></sub>
+      </td>
+      <td align="center">
+        <a href="screenshots/04-install-complete.png">
+          <img src="screenshots/thumbs/04-install-complete.png" width="190" alt="Installation Complete">
+        </a><br>
+        <sub><b>4. Complete &amp; 1-Tap Reboot</b></sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## ✨ Why This Fork? — ONE `aroma-config`, ZERO MMT-Extended!
+
+Upstream **NLSound** relies on MMT-Extended + a 200-line bash Volume Key Selector with **15 sequential prompts**.
+
+With **[AROMA-Next-Installer](https://github.com/Miustone/AROMA-Next-Installer)**'s built-in **Dual-Mode Engine**, module developers author **only ONE `aroma-config`** (zero MMT-Extended, zero duplicate Volume Key code!) and automatically get both worlds:
+
+| Environment | Installer Experience | Highlights |
+| :--- | :--- | :--- |
+| **Custom Recovery** (`TWRP`, `OrangeFox`, `AERA`, `PitchBlack` — `BOOTMODE=0`) | **🎨 `ANI` V26.11-RC5 Material 3 Touch GUI** | **AMOLED Modern** Material 3 You default theme (**Monochrome White** default + **8 Live Accents**), **17 redesigned Material 3 icons**, punch-hole-safe **Top Status Bar**, 1-tap stay-open **Appearance Bottom Sheet**, lossless **PNG screenshots**, live SmartPA/DAC dashboard, **1-Tap Audiophile Preset**, **1-Tap Profile Restore**, all 15 options across **4 touch screens**, and integrated **AROMA-Next-Filemanager (`ANF`)** with 1-tap **Bootloop-Saver**! |
+| **Booted Android** (`Magisk`, `KernelSU`, `APatch` App — `BOOTMODE=1`) | **⌨️ Built-In `ANI` Volume Key Selector** | Automatically renders the **exact same `aroma-config`** (`menubox`, `form`, `checkbox`, `selectbox`, `viewbox`) via native C `/dev/input` Volume Keys with **Go Back navigation** (`<- Go Back` / `VOL-` long-press) and `--preset` replay — zero duplicate code! |
+| **Locked Recovery Display** (`EXIT 77` Safety) | **🛡️ Automatic Volume Key Fallback** | Never freezes recovery — switches automatically to `ANI`'s native Volume Key Selector from the same `aroma-config`. |
+
+> [!TIP]
+> **Shared Profile Compatibility (`settings.nls`):** Profiles created in Recovery via **AROMA-Next** and profiles created inside **Magisk / KernelSU / APatch** share the exact same `/data/adb/modules/NLSound/settings.nls` format for instant 1-tap restore across updates.
+
+### ✨ Zero-Bloat CI Magic (`Miustone/aroma-next-action@v1`) & Building
+Look inside `META-INF/com/google/android/` — **279 vendored `ANI` binaries, themes, fonts, and icons are completely gone from Git!** Only NLSound's own 5 installer files (`aroma-config`, custom `magisk-installer`, `updater-script`, `nlsound-probe.sh`, `nlsound-summary.sh`) live in this repo.
+
+```text
+  NLSound Repo (Audio Payload + 5 Installer Files)   Miustone/AROMA-Next-Installer (Release)
+  ├─ common/ + system/ + customize.sh                ├─ arm64-v8a & armeabi-v7a ANI+ANF binaries
+  ├─ META-INF/.../aroma-config + nlsound-*.sh        ├─ AMOLED Modern + 7 Classic Themes
+  └─ META-INF/.../magisk-installer (custom override) ├─ 17 Material 3 Icons + 7 SIL OFL Fonts
+                         │                           └─ update-binary & aroma-mod-lib.sh
+                         └─────────────┬─────────────┘
+                                       ▼
+                  [ Miustone/aroma-next-action@v1 (template: magisk) ]
+                   Overlays NLSound files on top — custom overrides always win!
+                                       │
+                                       ▼
+             dist/NLSound-v4.5-AROMA-RC5-Next.zip  (297 entries, Recovery & App ready!)
+```
+
+- **Automatic CI Releases:** [`.github/workflows/release.yml`](.github/workflows/release.yml) uses **[`Miustone/aroma-next-action@v1`](https://github.com/Miustone/aroma-next-action)** to fetch the latest official `ANI` + `ANF` release on every build, overlay NLSound's payload & custom `magisk-installer` (`settings.nls` preservation) on top, verify permissions/LF/`sh -n`, and publish the ready-to-flash ZIP automatically.
+- **Local Build:**
+  ```sh
+  # Auto-fetches & caches ANI Magisk Template into .aroma-cache/ (or pass --aroma-zip <path> offline)
+  python build.py
+  ```
+  Outputs `dist/NLSound-v4.5-AROMA-RC5-Next.zip` with proper Unix `0755` permissions and LF line endings, ready to flash in Recovery or any Root Manager app.
+
+---
 
 ---
 

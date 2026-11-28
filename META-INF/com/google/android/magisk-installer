@@ -1,0 +1,155 @@
+#!/sbin/sh
+# NLSound — AROMA-Next Magisk / KernelSU / APatch Module Installer Bridge
+# Supports:
+#   1) Magisk (App & Recovery) via /data/adb/magisk/util_functions.sh
+#   2) Standalone Recovery installer (KernelSU / APatch / decrypted /data in TWRP/OrangeFox/AERA)
+
+OUTFD="$2"
+ZIPFILE="$3"
+
+ui_print() {
+  if [ -n "$OUTFD" ] && [ -e "/proc/self/fd/$OUTFD" ]; then
+    printf 'ui_print %s\nui_print\n' "$1" > "/proc/self/fd/$OUTFD" 2>/dev/null && return 0
+  fi
+  echo "$1"
+}
+
+# Normalize / detect BOOTMODE
+case "$BOOTMODE" in
+  true|1)  BOOTMODE=true ;;
+  false|0) BOOTMODE=false ;;
+  *)
+    if (ps -A 2>/dev/null || ps 2>/dev/null) | grep -qE "zygote|surfaceflinger" \
+       || [ -n "$(pidof zygote zygote64 surfaceflinger 2>/dev/null)" ]; then
+      BOOTMODE=true
+    else
+      BOOTMODE=false
+    fi
+    ;;
+esac
+export BOOTMODE OUTFD ZIPFILE
+
+# Ensure /data is mounted in recovery
+if [ "$BOOTMODE" != "true" ]; then
+  if ! grep -q " /data " /proc/mounts 2>/dev/null; then
+    mount /data >/dev/null 2>&1 || true
+  fi
+fi
+
+# Preserve previous NLSound settings.nls before any directory reset
+if [ -f /data/adb/modules/NLSound/settings.nls ]; then
+  mkdir -p "${AROMA_TMP:-/tmp/aroma}" 2>/dev/null || true
+  cp -f /data/adb/modules/NLSound/settings.nls "${AROMA_TMP:-/tmp/aroma}/saved_settings.nls" 2>/dev/null || true
+fi
+
+# Path 1: Standard Magisk util_functions.sh (works in both App and Recovery)
+if [ -f /data/adb/magisk/util_functions.sh ]; then
+  . /data/adb/magisk/util_functions.sh
+  install_module
+  exit $?
+fi
+
+# Path 2: Standalone Recovery Installer (KernelSU / APatch / decrypted /data)
+ui_print "@Initializing NLSound Module Installer..."
+ui_print "- Using standalone AROMA-Next module installer (KernelSU / APatch / Recovery)"
+
+WORK="/tmp/aroma-mod-work"
+rm -rf "$WORK"
+mkdir -p "$WORK"
+unzip -o "$ZIPFILE" "module.prop" "customize.sh" -d "$WORK" >/dev/null 2>&1 || {
+  ui_print "! Failed to unpack archive $ZIPFILE"
+  exit 1
+}
+
+if [ ! -f "$WORK/module.prop" ]; then
+  ui_print "! Missing module.prop in archive."
+  exit 1
+fi
+
+MODID="$(grep -E '^id=' "$WORK/module.prop" | head -n1 | cut -d'=' -f2- | tr -d '\r')"
+if [ -z "$MODID" ]; then
+  ui_print "! Invalid module.prop (missing id=)."
+  exit 1
+fi
+
+if [ ! -d /data/adb/modules ]; then
+  if [ -d /data/adb ]; then
+    mkdir -p /data/adb/modules
+  else
+    ui_print "! /data/adb not accessible (is /data encrypted in recovery?)."
+    ui_print "! Decrypt /data in Recovery or flash inside Magisk / KernelSU / APatch app."
+    exit 1
+  fi
+fi
+
+# Detect KernelSU / APatch so normalize_path uses overlay-compatible partition layout
+KSU=false
+APATCH=false
+[ -d /data/adb/ksu ] || [ -f /data/adb/ksu/modules.img ] && KSU=true
+[ -d /data/adb/ap ] && APATCH=true
+export KSU APATCH
+export KSU_VER_CODE=12000
+
+# Detect arch & API level for MMT-Extended / customize.sh
+case "$(uname -m)" in
+  aarch64|arm64*) ARCH=arm64; ABI=arm64-v8a; ABI32=armeabi-v7a; IS64BIT=true ;;
+  armv7*|armv8*|arm*) ARCH=arm; ABI=armeabi-v7a; ABI32=armeabi-v7a; IS64BIT=false ;;
+  x86_64) ARCH=x64; ABI=x86_64; ABI32=x86; IS64BIT=true ;;
+  *) ARCH=arm64; ABI=arm64-v8a; ABI32=armeabi-v7a; IS64BIT=true ;;
+esac
+API="$(getprop ro.build.version.sdk 2>/dev/null)"
+[ -z "$API" ] && API=34
+
+export NVBASE="/data/adb"
+export MODULEROOT="/data/adb/modules"
+export MODPATH="/data/adb/modules/$MODID"
+export TMPDIR="$WORK"
+export ARCH ABI ABI32 IS64BIT API
+export SYSTEM_ROOT=true
+export SYSTEM_AS_ROOT=true
+export MAGISK_VER="AROMA-Next"
+export MAGISK_VER_CODE=27000
+
+rm -rf "$MODPATH"
+mkdir -p "$MODPATH"
+
+set_perm() {
+  chown "$2:$3" "$1" 2>/dev/null || true
+  chmod "$4" "$1" 2>/dev/null || true
+  [ -n "$5" ] && chcon "$5" "$1" 2>/dev/null || true
+}
+
+set_perm_recursive() {
+  find "$1" -type d 2>/dev/null | while IFS= read -r d; do
+    chown "$2:$3" "$d" 2>/dev/null || true
+    chmod "$4" "$d" 2>/dev/null || true
+    [ -n "$6" ] && chcon "$6" "$d" 2>/dev/null || true
+  done
+  find "$1" -type f 2>/dev/null | while IFS= read -r f; do
+    chown "$2:$3" "$f" 2>/dev/null || true
+    chmod "$5" "$f" 2>/dev/null || true
+    [ -n "$6" ] && chcon "$6" "$f" 2>/dev/null || true
+  done
+}
+
+abort() {
+  ui_print "! $1"
+  rm -rf "$WORK" 2>/dev/null || true
+  exit 1
+}
+
+if [ -f "$WORK/customize.sh" ]; then
+  . "$WORK/customize.sh"
+fi
+
+# Ensure module.prop is always present
+[ -f "$MODPATH/module.prop" ] || cp -f "$WORK/module.prop" "$MODPATH/module.prop"
+# Keep executable permissions on tinymix_ext and module scripts
+[ -d "$MODPATH/system/bin" ] && chmod 0755 "$MODPATH/system/bin/"* 2>/dev/null || true
+for s in action.sh service.sh post-fs-data.sh; do
+  [ -f "$MODPATH/$s" ] && chmod 0755 "$MODPATH/$s" 2>/dev/null || true
+done
+
+ui_print "- Installed module '$MODID' to $MODPATH"
+rm -rf "$WORK" 2>/dev/null || true
+exit 0

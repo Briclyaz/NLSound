@@ -6,15 +6,46 @@ MIRRORDIR="/data/local/tmp/NLSound"
 OTHERTMPDIR="/dev/NLSound"
 PROP="$MODPATH/system.prop"
 RESTORE_SETTINGS="$NLSDIR/settings.nls"
+[ ! -f "$RESTORE_SETTINGS" ] && [ -f "${AROMA_TMP:-/tmp/aroma}/saved_settings.nls" ] && RESTORE_SETTINGS="${AROMA_TMP:-/tmp/aroma}/saved_settings.nls"
 VERSION="$(grep "^version=" "$MODPATH/module.prop" | cut -d'=' -f2-)"
+NL="
+"
 
-LANG="$(settings get system system_locales)"
-DEVICE="$(getprop ro.product.vendor.device)"
-if [ "$DEVICE" == "mivendor" ]; then
-  DEVICE="$(getprop ro.product.device)" # mi14ultra - aurora, mi13ultra - ishtar, RN13 - sapphire
+# Fallback property reader for Custom Recovery when getprop lacks vendor/system props
+read_build_prop() {
+  local key="$1"
+  local f val
+  for f in "$ORIGDIR/vendor/build.prop" "$ORIGDIR/system/build.prop" \
+           /vendor/build.prop /system_root/vendor/build.prop /system_root/system/build.prop /system/build.prop; do
+    if [ -r "$f" ]; then
+      val="$(grep -E "^${key}=" "$f" 2>/dev/null | head -n1 | cut -d'=' -f2- | tr -d '\r')"
+      if [ -n "$val" ]; then
+        echo "$val"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+LANG="$(settings get system system_locales 2>/dev/null)"
+[ -z "$LANG" ] && LANG="$(getprop persist.sys.locale 2>/dev/null)"
+[ -z "$LANG" ] && LANG="$(getprop ro.product.locale 2>/dev/null)"
+
+DEVICE="$(getprop ro.product.vendor.device 2>/dev/null)"
+[ -z "$DEVICE" ] && DEVICE="$(read_build_prop ro.product.vendor.device)"
+if [ "$DEVICE" = "mivendor" ] || [ -z "$DEVICE" ]; then
+  DEVICE="$(getprop ro.product.device 2>/dev/null)" # mi14ultra - aurora, mi13ultra - ishtar, RN13 - sapphire
+  [ -z "$DEVICE" ] && DEVICE="$(read_build_prop ro.product.device)"
 fi
-PROCESSOR="$(getprop ro.board.platform)"
-case "$(getprop ro.hardware)" in mt*)
+[ -z "$DEVICE" ] && DEVICE="$(getprop ro.build.product 2>/dev/null)"
+
+PROCESSOR="$(getprop ro.board.platform 2>/dev/null)"
+[ -z "$PROCESSOR" ] && PROCESSOR="$(read_build_prop ro.board.platform)"
+
+HW_PROP="$(getprop ro.hardware 2>/dev/null)"
+[ -z "$HW_PROP" ] && HW_PROP="$(read_build_prop ro.hardware)"
+case "$HW_PROP" in mt*)
   isMTK=true
   ;;
 esac
@@ -45,28 +76,92 @@ ACDB="https://github.com/Briclyaz/NLSound_module_acdb_addon/raw/refs/heads/main/
 ACDBDIR="$MODPATH$(normalize_path "/vendor/etc/acdbdata")"
 SEPARATOR="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# import language strings
-if [[ "$LANG" =~ "en-RU" ]] || [[ "$LANG" =~ "ru-" ]]; then
-  source "$MODPATH/common/russiantext.sh"
-elif [[ "$LANG" =~ "zh-" ]]; then
-  source "$MODPATH/common/chinesetext.sh"
-else
-  source "$MODPATH/common/englishtext.sh"
-fi
+# Hardware display strings (UI & selection handled natively by AROMA-Next Touch / VolKey engine)
+HW_HEADER="          [ AUDIO HARDWARE DETECTED ]"
+HW_CIRRUS="Speaker Amplifier    : Cirrus Logic (CS35L41)"
+HW_TFA="Speaker Amplifier    : NXP / Goodix TFA"
+HW_TAS="Speaker Amplifier    : Texas Instruments (TAS)"
+HW_AWINIC="Speaker Amplifier    : Awinic (AW88xx)"
+HW_MAXIM="Speaker Amplifier    : Maxim Integrated"
+HW_WSA="Speaker Amplifier    : Qualcomm WSA"
+HW_WCD="Primary Audio Codec  : Qualcomm WCD (Aqstic Hi-Fi)"
+HW_ESS="Dedicated Hi-Fi DAC  : ESS Sabre"
+HW_AKM="Dedicated Hi-Fi DAC  : Asahi Kasei (AKM)"
+HW_SOC="Primary Audio Codec  : Integrated Processor Codec (SoC)"
+
+final_print_text() {
+  ui_print "$SEPARATOR"
+  ui_print "          CONFIGURATION SUMMARY"
+  ui_print "$SEPARATOR"
+  ui_print "  01 Volume steps count        : $VOLSTEPS"
+  ui_print "  02 Max volume level          : $VOLMEDIA"
+  ui_print "  03 Mic sensitivity           : $VOLMIC"
+  ui_print "  04 Audio bit depth           : $BITNES"
+  ui_print "  05 Audio sample rate         : $SAMPLERATE"
+  ui_print "  06 Limiters & DRC disabled   : $STEP6"
+  ui_print "  07 Vendor Hi-Fi features     : $STEP7"
+  ui_print "  08 Sub-bass & mixer patches  : $STEP8"
+  ui_print "  09 build.prop optimizations  : $STEP9"
+  ui_print "  10 Bluetooth enhancements    : $STEP10"
+  ui_print "  11 Direct PCM routing        : $STEP11"
+  ui_print "  12 Audio effects policy      : $STEP12"
+  ui_print "  13 Device hardware tweaks    : $STEP13"
+  ui_print "  14 Dolby Atmos Hi-Fi profile : $STEP14"
+  ui_print "  15 ACDB modifications        : $([ "$PATCHACDB" != "false" ] && echo "$PATCHACDB" || echo "$DELETEACDB")"
+  ui_print "$SEPARATOR"
+  ui_print "  Device model   : $DEVICE"
+  ui_print "  Module version : $VERSION"
+  ui_print "$SEPARATOR"
+  ui_print "  Patching audio files, please wait..."
+}
 
 # Добавляем пути рут-менеджеров в PATH (Magisk, KernelSU, APatch)
 export PATH="/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH"
 
-# Собираем существующие каталоги
+type aroma_progress >/dev/null 2>&1 || aroma_progress() { :; }
+aroma_progress 0.18 "Scanning audio configs & hardware..."
+
+# Собираем существующие каталоги (в Recovery сканируем через $ORIGDIR для канонических путей)
+SCAN_ROOT=""
+[ "$BOOTMODE" != "true" ] && [ -n "$ORIGDIR" ] && [ -d "$ORIGDIR" ] && SCAN_ROOT="$ORIGDIR"
 SEARCH_DIRS=""
 for d in /system /vendor /system_ext /mi_ext /product /odm /my_product; do
-  [ -d "$d" ] && SEARCH_DIRS="$SEARCH_DIRS $d/"
+  [ -d "${SCAN_ROOT}${d}" ] && SEARCH_DIRS="$SEARCH_DIRS ${SCAN_ROOT}${d}/"
 done
 
+SCAN_LIST="${TMPDIR:-/tmp}/nls_scan.list"
+{
+  if [ -n "$SEARCH_DIRS" ]; then
+    find -H $SEARCH_DIRS \
+      \( -path "*/lib" -o -path "*/lib64" -o -path "*/framework" -o -path "*/fonts" -o -path "*/bin" \) -prune -o \
+      \( -type f -o -type l \) \( \
+        -name "*.xml" -o \
+        -name "*.conf" -o \
+        -name "*.acdb" -o \
+        -name "*.apk" \
+      \) -print 2>/dev/null
+  fi
+
+  if [ -d /sys/module ]; then
+    find /sys/module -maxdepth 3 -type f \( \
+      -name "maximum_substreams" -o \
+      -name "high_perf_mode" -o \
+      -name "impedance_detect_en" \
+    \) -print 2>/dev/null
+  fi
+} > "$SCAN_LIST"
+
 while IFS= read -r file; do
+  # Strip recovery $SCAN_ROOT prefix and collapse duplicate slashes to canonical paths
+  if [ -n "$SCAN_ROOT" ]; then
+    case "$file" in
+      "$SCAN_ROOT"/*) file="${file#"$SCAN_ROOT"}" ;;
+    esac
+  fi
+  file="$(echo "$file" | sed 's|//*|/|g')"
   case "$file" in
-  */audio_configs*.xml) ACONFS="$ACONFS$file"$'\n' ;;
-  */"$DEVICE".xml) DEVFEAS="$DEVFEAS$file"$'\n' ;;
+  */audio_configs*.xml) ACONFS="$ACONFS$file$NL" ;;
+  */"$DEVICE".xml) DEVFEAS="$DEVFEAS$file$NL" ;;
   */oplus.product.feature*.xml|\
   */oplus.product.features*.xml|\
   */realme_product_rom_feature*.xml|\
@@ -77,53 +172,36 @@ while IFS= read -r file; do
   */com.realme.features*.xml|\
   */com.oplus.app-features.xml|\
   */com.oplus.oplus-feature.xml)
-  DEVFEAS="$DEVFEAS$file"$'\n';;
+  DEVFEAS="$DEVFEAS$file$NL";;
   */DeviceFeatures.xml|\
   */handheld_core_hardware.xml|\
   */platform.xml|\
   */android.hardware.audio.pro.xml) 
-  DEVFEASNEW="$DEVFEASNEW$file"$'\n' ;;
-  */DeviceFeatures.xml) DEVFEASNEW="$DEVFEASNEW$file"$'\n' ;;
-  */*audio_policy_configuration*.xml) AUDIOPOLICYS="$AUDIOPOLICYS$file"$'\n' ;;
-  */media_codecs_c2_audio.xml | */media_codecs_google_audio.xml | */media_codecs_google_c2_audio.xml) MCODECS="$MCODECS$file"$'\n' ;;
-  */media_codecs_dolby_audio.xml) DCODECS="$DCODECS$file"$'\n' ;;
-  */audio_io_policy.conf) IOPOLICYS="$IOPOLICYS$file"$'\n' ;;
-  */audio_output_policy.conf) OUTPUTPOLICYS="$OUTPUTPOLICYS$file"$'\n' ;;
-  */*resourcemanager*.xml) RESOURCES="$RESOURCES$file"$'\n' ;;
-  */dap-*.xml | */dax-*.xml | */*dolby_dax*.xml) DAXES="$DAXES$file"$'\n' ;;
-  */*mixer_paths*.xml) MPATHS="$MPATHS$file"$'\n' ;;
-  */audio_platform_info*.xml) APIXMLS="$APIXMLS$file"$'\n' ;;
-  */audio_effects*.conf) AEFFECTCONFS="$AEFFECTCONFS$file"$'\n' ;;
-  */audio_effects*.xml) AEFFECTXMLS="$AEFFECTXMLS$file"$'\n' ;;
-  */microphone_characteristics*.xml) MICXARS="$MICXARS$file"$'\n' ;;
-  */*audio_device*.xml) ADEVS="$ADEVS$file"$'\n' ;;
-  */*aurisys_config*.xml) AURCONFS="$AURCONFS$file"$'\n' ;;
-  */*AudioParamOptions*.xml) APAROPTS="$APAROPTS$file"$'\n' ;;
-  */*backend_conf*.xml) BACKEND_CONFS="$BACKEND_CONFS$file"$'\n' ;;
-  */*AudioEffectCenter*.apk | */*AudioFX*.apk | */*MusicFX*.apk | */*SamsungDAP*.apk) APPS="$APPS$file"$'\n' ;;
-  */*Headset_cal.acdb | */*Hdmi_cal.acdb | */*Bluetooth_cal.acdb | */*Speaker_cal.acdb | */*General_cal.acdb | */*Global_cal.acdb) OLDACDBS="$OLDACDBS$file"$'\n' ;;
-  */maximum_substreams) SUBSTREAMS="$SUBSTREAMS$file"$'\n' ;;
-  */high_perf_mode | */impedance_detect_en) SUSFLAGS="$SUSFLAGS$file"$'\n' ;;
+  DEVFEASNEW="$DEVFEASNEW$file$NL" ;;
+  */*audio_policy_configuration*.xml) AUDIOPOLICYS="$AUDIOPOLICYS$file$NL" ;;
+  */media_codecs_c2_audio.xml | */media_codecs_google_audio.xml | */media_codecs_google_c2_audio.xml) MCODECS="$MCODECS$file$NL" ;;
+  */media_codecs_dolby_audio.xml) DCODECS="$DCODECS$file$NL" ;;
+  */audio_io_policy.conf) IOPOLICYS="$IOPOLICYS$file$NL" ;;
+  */audio_output_policy.conf) OUTPUTPOLICYS="$OUTPUTPOLICYS$file$NL" ;;
+  */*resourcemanager*.xml) RESOURCES="$RESOURCES$file$NL" ;;
+  */dap-*.xml | */dax-*.xml | */*dolby_dax*.xml) DAXES="$DAXES$file$NL" ;;
+  */*mixer_paths*.xml) MPATHS="$MPATHS$file$NL" ;;
+  */audio_platform_info*.xml) APIXMLS="$APIXMLS$file$NL" ;;
+  */audio_effects*.conf) AEFFECTCONFS="$AEFFECTCONFS$file$NL" ;;
+  */audio_effects*.xml) AEFFECTXMLS="$AEFFECTXMLS$file$NL" ;;
+  */microphone_characteristics*.xml) MICXARS="$MICXARS$file$NL" ;;
+  */*audio_device*.xml) ADEVS="$ADEVS$file$NL" ;;
+  */*aurisys_config*.xml) AURCONFS="$AURCONFS$file$NL" ;;
+  */*AudioParamOptions*.xml) APAROPTS="$APAROPTS$file$NL" ;;
+  */*backend_conf*.xml) BACKEND_CONFS="$BACKEND_CONFS$file$NL" ;;
+  */*AudioEffectCenter*.apk | */*AudioFX*.apk | */*MusicFX*.apk | */*SamsungDAP*.apk) APPS="$APPS$file$NL" ;;
+  */*Headset_cal.acdb | */*Hdmi_cal.acdb | */*Bluetooth_cal.acdb | */*Speaker_cal.acdb | */*General_cal.acdb | */*Global_cal.acdb) OLDACDBS="$OLDACDBS$file$NL" ;;
+  */maximum_substreams) SUBSTREAMS="$SUBSTREAMS$file$NL" ;;
+  */high_perf_mode | */impedance_detect_en) SUSFLAGS="$SUSFLAGS$file$NL" ;;
   *) ;; 
   esac
-done < <(
-  find -H $SEARCH_DIRS \
-    \( -path "*/lib" -o -path "*/lib64" -o -path "*/framework" -o -path "*/fonts" -o -path "*/bin" \) -prune -o \
-    \( -type f -o -type l \) \( \
-      -name "*.xml" -o \
-      -name "*.conf" -o \
-      -name "*.acdb" -o \
-      -name "*.apk" \
-    \) -print 2>/dev/null
-
-  if [ -d /sys/module ]; then
-    find /sys/module -maxdepth 3 -type f \( \
-      -name "maximum_substreams" -o \
-      -name "high_perf_mode" -o \
-      -name "impedance_detect_en" \
-    \) -print 2>/dev/null
-  fi
-)
+done < "$SCAN_LIST"
+rm -f "$SCAN_LIST" 2>/dev/null || true
 
 HAS_TFA=false HAS_CIRRUS=false HAS_TAS=false HAS_AWINIC=false HAS_MAXIM=false
 HAS_WSA=false HAS_WCD=false HAS_ESS=false HAS_AKM=false
@@ -168,7 +246,9 @@ SYS_AUDIO="$(
     ls -d /sys/devices/platform/soc/*macro* /sys/devices/platform/soc/*audio* 2>/dev/null
     [ -d /proc/device-tree ] && grep -saoE '[a-zA-Z0-9_-]+(wcd|bolero|macro|es9|ak4|cs4)[a-zA-Z0-9_-]+' /proc/device-tree 2>/dev/null
     # Проверка характерных аппаратных регистров кодека в микшерах устройства
-    [ -n "$MPATHS" ] && grep -siohE 'wcd|bolero|rx_macro|tx_macro|rx int0 dem mux|dec0 mode|es9[0-9]{3}|ak4[0-9]{3}' $MPATHS 2>/dev/null
+    for _mp in $MPATHS; do
+      [ -r "${ORIGDIR}${_mp}" ] && grep -siohE 'wcd|bolero|rx_macro|tx_macro|rx int0 dem mux|dec0 mode|es9[0-9]{3}|ak4[0-9]{3}' "${ORIGDIR}${_mp}" 2>/dev/null
+    done
   } | tr '[:upper:]' '[:lower:]'
 )"
 
@@ -193,41 +273,6 @@ detect_codec HAS_WCD "wcd|bolero|rx_macro|tx_macro|lpass.*macro|dec0 mode|rx int
 ui_print "$SEPARATOR"
 ui_print " "
 
-handle_input() {
-  while true; do
-    case $(getevent -lq 2>/dev/null | grep -m 1 -E 'KEY_VOLUME(UP|DOWN).*DOWN') in
-      *KEY_VOLUMEUP*)   echo "up"; return ;;
-      *KEY_VOLUMEDOWN*) echo "down"; return ;;
-    esac
-  done
-}
-
-show_menu() {
-  local selected=1
-  local total=$#
-  if [ $total -eq 2 ]; then
-    while true; do
-      case $(handle_input) in
-      "up") return 1 ;;
-      "down") return 2 ;;
-      esac
-    done
-  else
-    while true; do
-      eval "local current=\"\$$selected\""
-      ui_print "➔ $current"
-      ui_print " "
-      case $(handle_input) in
-      "up") selected=$((selected % total + 1)) ;;
-      "down")
-        ui_print "$SELECTE $current"
-        return $selected
-        ;;
-      esac
-    done
-  fi
-}
-
 VOLSTEPS=false
 VOLMEDIA=false
 VOLMIC=false
@@ -245,172 +290,49 @@ STEP14=false
 PATCHACDB=false
 DELETEACDB=false
 
-continue_script=true
-if [ -f "$RESTORE_SETTINGS" ]; then
-  echo -e "\n$RESTORE"
-  show_menu $SMENU
-  if [ $? -eq 1 ]; then
-    continue_script=false
-    source "$RESTORE_SETTINGS"
-    export SAMPLERATE BITNES VOLMIC VOLMEDIA VOLSTEPS STEP6 STEP7 STEP8 STEP9 STEP10 STEP11 STEP12 STEP13 STEP14 PATCHACDB DELETEACDB
-  else
-    echo -e "$SMENUSKIP\n\n"
-    sleep 0.3
-  fi
+# Load configuration produced by AROMA-Next (Touch GUI in Recovery OR native VolKey Selector in BOOTMODE=1)
+AROMA_CFG="${AROMA_TMP:-/tmp/aroma}/nlsound.cfg"
+if [ -f "$AROMA_CFG" ]; then
+  ui_print "- Loading configuration from AROMA-Next ($AROMA_CFG)..."
+  . "$AROMA_CFG"
+elif [ -f "$RESTORE_SETTINGS" ]; then
+  ui_print "- Restoring previous profile from $RESTORE_SETTINGS..."
+  . "$RESTORE_SETTINGS"
+else
+  ui_print "- No interactive profile found; applying Audiophile Recommended defaults..."
+  VOLSTEPS="30"
+  VOLMEDIA="false"
+  VOLMIC="false"
+  BITNES="24"
+  SAMPLERATE="96000"
+  STEP6="true"
+  STEP7="true"
+  STEP8="true"
+  STEP9="true"
+  STEP10="true"
+  STEP11="true"
+  STEP12="part"
+  STEP13="true"
+  STEP14="true"
+  PATCHACDB="false"
+  DELETEACDB="false"
 fi
 
-if [ "$continue_script" = "true" ]; then
-  # 01. Volume steps
-  echo -e "\n$STRINGSTEP1"
-  show_menu $SMENU1
-  case $? in
-  1) VOLSTEPS="false" ;;
-  2) VOLSTEPS="30" ;;
-  3) VOLSTEPS="50" ;;
-  4) VOLSTEPS="100" ;;
-  esac
-
-  # 02. Media volume
-  echo -e "\n\n\n$STRINGSTEP2"
-  show_menu $SMENU2
-  case $? in
-  1) VOLMEDIA="false" ;;
-  2) VOLMEDIA="78" ;;
-  3) VOLMEDIA="84" ;;
-  4) VOLMEDIA="90" ;;
-  5) VOLMEDIA="96" ;;
-  6) VOLMEDIA="102" ;;
-  7) VOLMEDIA="108" ;;
-  esac
-
-  # 03. Mic sensitivity
-  echo -e "\n\n\n$STRINGSTEP3"
-  show_menu $SMENU2
-  case $? in
-  1) VOLMIC="false" ;;
-  2) VOLMIC="78" ;;
-  3) VOLMIC="84" ;;
-  4) VOLMIC="90" ;;
-  5) VOLMIC="96" ;;
-  6) VOLMIC="102" ;;
-  7) VOLMIC="108" ;;
-  esac
-
-  # 04. Bit depth
-  echo -e "\n\n\n$STRINGSTEP4"
-  show_menu $SMENU4
-  case $? in
-  1) BITNES="false" ;;
-  2) BITNES="16" ;;
-  3) BITNES="24" ;;
-  4) BITNES="32" ;;
-  5) BITNES="float" ;;
-  esac
-
-  # 05. Sample rate
-  echo -e "\n\n\n$STRINGSTEP5"
-  show_menu $SMENU5
-  case $? in
-  1) SAMPLERATE="false" ;;
-  2) SAMPLERATE="44100" ;;
-  3) SAMPLERATE="48000" ;;
-  4) SAMPLERATE="96000" ;;
-  5) SAMPLERATE="192000" ;;
-  6) SAMPLERATE="384000" ;;
-  esac
-
-  # 06. DRC & Limiters
-  echo -e "\n\n\n$STRINGSTEP6\n"
-  show_menu $SMENU
-  [ $? -eq 1 ] && STEP6=true
-
-  # 07. Vendor Hi-Fi
-  echo -e "\n\n\n$STRINGSTEP7"
-  if [ -n "$DEVFEASNEW" ] || [ -n "$DEVFEAS" ]; then
-    echo -e "$INSTALLSKIP"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP7=true
-  else
-    echo -e "$SMENUAUTOSKIP\n"
-  fi
-
-  # 08. Sub-bass
-  echo -e "\n\n\n$STRINGSTEP8\n"
-  show_menu $SMENU
-  [ $? -eq 1 ] && STEP8=true
-
-  # 09. build.prop
-  echo -e "\n\n\n$STRINGSTEP9\n"
-  show_menu $SMENU
-  [ $? -eq 1 ] && STEP9=true
-
-  # 10. Bluetooth
-  echo -e "\n\n\n$STRINGSTEP10\n"
-  show_menu $SMENU
-  [ $? -eq 1 ] && STEP10=true
-
-  # 11. Direct PCM
-  echo -e "\n\n\n$STRINGSTEP11"
-  if [ -n "$IOPOLICYS" ] || [ -n "$OUTPUTPOLICYS" ]; then
-    echo -e "$INSTALLSKIP"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP11=true
-  else
-    echo -e "$SMENUAUTOSKIP\n"
-  fi
-
-  # 12. Audio effects
-  echo -e "\n\n\n$STRINGSTEP12"
-  show_menu $SMENU12
-  case $? in
-  1) STEP12="false" ;;
-  2) STEP12="part" ;;
-  3) STEP12="full" ;;
-  esac
-
-  # 13. Hardware tweaks
-  echo -e "\n\n\n$STRINGSTEP13\n"
-  show_menu $SMENU
-  [ $? -eq 1 ] && STEP13=true
-
-  # 14. Dolby Atmos
-  echo -e "\n\n\n$STRINGSTEP14"
-  if { [ -n "$DAXES" ] || [ -n "$DCODECS" ]; } && [ "$STEP12" != "full" ]; then
-    echo -e "$INSTALLSKIP"
-    show_menu $SMENU
-    [ $? -eq 1 ] && STEP14=true
-  else
-    echo -e "$SMENUAUTOSKIP\n"
-  fi
-
-  # 15. ACDB
-  echo -e "\n\n\n"
-  if [ -n "$OLDACDBS" ]; then
-    ui_print "$STRINGSTEP15"
-    show_menu $SMENU15
-    case $? in
-    1) DELETEACDB="false" ;;
-    2) DELETEACDB="Basic" ;;
-    3) DELETEACDB="General" ;;
-    4) DELETEACDB="Speaker" ;;
-    esac
-  else
-    echo -e "$STRINGSTEP151"
-    case "$DEVICE" in alioth* | Pong* | marble* | RE5465* | mondrian* | ishtar* | aurora* | REE2B2L1* | PQ83A01*)
-      echo -e "$INSTALLSKIP"
-      show_menu $SMENU
-      [ $? -eq 1 ] && PATCHACDB=true
-      ;;
-    *)
-      echo -e "$SMENUAUTOSKIP\n"
-      ;;
-    esac
+# Device-capability guards
+[ "$STEP7" = "true" ] && [ -z "$DEVFEASNEW" ] && [ -z "$DEVFEAS" ] && STEP7="false"
+[ "$STEP11" = "true" ] && [ -z "$IOPOLICYS" ] && [ -z "$OUTPUTPOLICYS" ] && STEP11="false"
+if [ "$STEP14" = "true" ]; then
+  if [ "$STEP12" = "full" ] || { [ -z "$DAXES" ] && [ -z "$DCODECS" ]; }; then
+    STEP14="false"
   fi
 fi
+[ "$DELETEACDB" != "false" ] && [ -z "$OLDACDBS" ] && DELETEACDB="false"
+export SAMPLERATE BITNES VOLMIC VOLMEDIA VOLSTEPS STEP6 STEP7 STEP8 STEP9 STEP10 STEP11 STEP12 STEP13 STEP14 PATCHACDB DELETEACDB
 
-echo -e "\n\n"
+ui_print " "
 final_print_text
 ui_print " "
+aroma_progress 0.25 "Patching audio policies & HAL configs..."
 
 # Writing settings
 echo -e "#installer options\n#Below you can see the decoding of the names of the points,\n#or trust the numerical values of the points.\n\n#STEP1=Select volume steps\n#STEP2=Increase media volumes\n#STEP3=Improving microphones sensitivity\n#STEP4=Select audio format (16..float)\n#STEP5=Select sampling rates (96..384000)\n#STEP6=Turn off sound interference\n#STEP7=Patching device_features files\n#STEP8=Other patches in mixer_paths files\n#STEP9=Tweaks for build.prop files\n#STEP10=Improve bluetooth\n#STEP11=Switch audio output (DIRECT -> DIRECT_PCM)\n#STEP12=Ignore all audio effects\n#STEP13=Install experimental tweaks for tinymix\n#STEP14=Configure Dolby Atmos\n#PATCHACDB=Install patched ACDB files\n#DELETEACDB=Deleting acdb files\n\n#Module version: $VERSION\n#Device: $DEVICE\n\nVOLSTEPS=$VOLSTEPS\nVOLMEDIA=$VOLMEDIA\nVOLMIC=$VOLMIC\nBITNES=$BITNES\nSAMPLERATE=$SAMPLERATE\nSTEP6=$STEP6\nSTEP7=$STEP7\nSTEP8=$STEP8\nSTEP9=$STEP9\nSTEP10=$STEP10\nSTEP11=$STEP11\nSTEP12=$STEP12\nSTEP13=$STEP13\nSTEP14=$STEP14\nPATCHACDB=$PATCHACDB\nDELETEACDB=$DELETEACDB" > "$MODPATH/settings.nls"
@@ -981,7 +903,7 @@ EOF
       if [ -z "$AEFFECTCONFS" ]; then
         for std_conf in /system/etc/audio_effects.conf /vendor/etc/audio_effects.conf /system/vendor/etc/audio_effects.conf /odm/etc/audio_effects.conf /vendor/etc/audio/audio_effects.conf; do
           if [ -e "$std_conf" ] || { [ -n "$ORIGDIR" ] && [ -e "$ORIGDIR$std_conf" ]; }; then
-            AEFFECTCONFS="$AEFFECTCONFS$std_conf"$'\n'
+            AEFFECTCONFS="$AEFFECTCONFS$std_conf$NL"
           fi
         done
       fi
@@ -1274,6 +1196,7 @@ if [ "$STEP11" == "true" ] || [ "$BITNES" != "false" ] || [ "$SAMPLERATE" != "fa
   } &
 fi
 
+aroma_progress 0.55 "Tuning mixer paths, 4 Hz sub-bass & gain..."
 if [ "$VOLMEDIA" != "false" ] || [ "$VOLMIC" != "false" ] || [ "$STEP6" == "true" ] || [ "$STEP8" == "true" ]; then
   for OMIX in ${MPATHS}; do
     {
@@ -1430,6 +1353,7 @@ if [ "$VOLSTEPS" != "false" ]; then
   } &
 fi
 
+aroma_progress 0.72 "Configuring hardware registers (Tinymix)..."
 if [ "$STEP13" = "true" ]; then
   tinymix_support=false
 
@@ -3072,9 +2996,10 @@ EOF
     esac
 fi
 
+aroma_progress 0.82 "Applying Dolby Atmos & ACDB overrides..."
 if [ "$DELETEACDB" != "false" ] && [ -n "$OLDACDBS" ]; then
   for acdb_src in $OLDACDBS; do
-    [ -f "$acdb_src" ] || continue
+    [ -f "$ORIGDIR$acdb_src" ] || [ -f "$acdb_src" ] || continue
 
     acdb_target="$MODPATH$(normalize_path "$acdb_src")"
 
@@ -3090,11 +3015,11 @@ if [ "$PATCHACDB" = "true" ]; then
   ui_print " "
 
   mkdir -p "$ACDBDIR"
-  ZIPFILE="$ACDBDIR/$DEVICE.zip"
+  ACDB_ZIP="$ACDBDIR/$DEVICE.zip"
 
-  if busybox wget -q --no-check-certificate --timeout=15 -O "$ZIPFILE" "$ACDB" 2>/dev/null && [ -s "$ZIPFILE" ]; then
-    if busybox unzip -q -o "$ZIPFILE" -d "$ACDBDIR" 2>/dev/null; then
-      rm -f "$ZIPFILE"
+  if busybox wget -q --no-check-certificate --timeout=15 -O "$ACDB_ZIP" "$ACDB" 2>/dev/null && [ -s "$ACDB_ZIP" ]; then
+    if busybox unzip -q -o "$ACDB_ZIP" -d "$ACDBDIR" 2>/dev/null; then
+      rm -f "$ACDB_ZIP"
       if [ $(find "$ACDBDIR" -type f | wc -l) -gt 0 ]; then
         ui_print "- acdb successfully integrated!"
       else
@@ -3102,17 +3027,18 @@ if [ "$PATCHACDB" = "true" ]; then
       fi
     else
       ui_print "! Unzip error or corrupted archive."
-      rm -f "$ZIPFILE"
+      rm -f "$ACDB_ZIP"
     fi
   else
     ui_print "! Connection error or busybox wget failed. Skipping ACDB."
-    rm -f "$ZIPFILE"
+    rm -f "$ACDB_ZIP"
   fi
   ui_print " "
 fi
 
 wait
 
+aroma_progress 0.88 "Injecting mixer XML parameters..."
 # Writing tinymix parameters in the mixer
 if [ "$STEP13" == "true" ] || [ "$VOLMEDIA" != "false" ]; then
   {
@@ -3137,6 +3063,8 @@ if [ "$STEP13" == "true" ] || [ "$VOLMEDIA" != "false" ]; then
 
     for OMIX in ${MPATHS}; do
       MIX="$MODPATH$(normalize_path "$OMIX")"
+      [ -f "$MIX" ] || cp_ch "$ORIGDIR$OMIX" "$MIX"
+      [ -f "$MIX" ] || continue
       [ -s "$sed_file" ] && sed -i -f "$sed_file" "$MIX"
       if ! grep -q "$MARKER" "$MIX"; then
         indent=$(sed -n '/<\/mixer>/{x;p;d}' "$MIX" | grep -o '^[[:space:]]*')
@@ -3153,5 +3081,5 @@ fi
 
 wait
 ui_print " "
-ui_print " - With love, NLSound Team"
+ui_print " - With love, NLSound Team (AROMA-Next Edition by Miustone)"
 ui_print " "

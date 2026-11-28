@@ -1,6 +1,6 @@
 id=NLSound
-name=NLSound
-version=v4.5
-versionCode=1720
-author=NLSound Team
-description=This module globally improves audio quality when recording video/audio and listening to audio on your device. Support: @nlsound_support | Channel: @nlsound_updates
+name=NLSound (AROMA-Next Edition)
+version=v4.5-AROMA-RC5
+versionCode=1722
+author=NLSound Team (AROMA-Next Fork by Miustone)
+description=System-level Hi-Fi audio enhancement module featuring AROMA-Next-Installer (ANI) V26.11-RC5 Material 3 Touch GUI & ANF in Recovery and native Volume Key Selector in Android System (BOOTMODE=1). Upstream: Briclyaz/NLSound | ANI: Miustone/AROMA-Next-Installer
